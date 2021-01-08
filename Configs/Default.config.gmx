@@ -47,7 +47,7 @@
     <option_android_major_version>1</option_android_major_version>
     <option_android_min_sdk_version>9</option_android_min_sdk_version>
     <option_android_minor_version>0</option_android_minor_version>
-    <option_android_mmedia_ads>false</option_android_mmedia_ads>
+    <option_android_mmedia_ads>0</option_android_mmedia_ads>
     <option_android_moga>0</option_android_moga>
     <option_android_mopub_ads>0</option_android_mopub_ads>
     <option_android_orient_landscape>True</option_android_orient_landscape>
@@ -211,7 +211,7 @@
     <option_changeresolution>false</option_changeresolution>
     <option_closeesc>true</option_closeesc>
     <option_colordepth>0</option_colordepth>
-    <option_display_name>GameMaker: Studio</option_display_name>
+    <option_display_name>AM2R Server</option_display_name>
     <option_displayerrors>True</option_displayerrors>
     <option_ecma>0</option_ecma>
     <option_facebook_app_display_name></option_facebook_app_display_name>
@@ -224,7 +224,7 @@
     <option_fullscreen>False</option_fullscreen>
     <option_gameguid>{3174195E-0BDE-4396-A756-A4887DAE26D9}</option_gameguid>
     <option_gameid>761176180</option_gameid>
-    <option_haptic_effects>false</option_haptic_effects>
+    <option_haptic_effects>0</option_haptic_effects>
     <option_hasloadimage>false</option_hasloadimage>
     <option_helpkey>true</option_helpkey>
     <option_html5_CreationEventOrder>true</option_html5_CreationEventOrder>
@@ -503,7 +503,7 @@
     <option_version_copyright></option_version_copyright>
     <option_version_description></option_version_description>
     <option_version_major>1</option_version_major>
-    <option_version_minor>0</option_version_minor>
+    <option_version_minor>1</option_version_minor>
     <option_version_product></option_version_product>
     <option_version_release>0</option_version_release>
     <option_win8_advertising_appid></option_win8_advertising_appid>
@@ -586,7 +586,7 @@
     <option_windows_enable_steam>0</option_windows_enable_steam>
     <option_windows_game_icon>Configs\Default\windows\runner_icon.ico</option_windows_game_icon>
     <option_windows_license>Configs\Default\windows\License.txt</option_windows_license>
-    <option_windows_mainor_version>0</option_windows_mainor_version>
+    <option_windows_mainor_version>1</option_windows_mainor_version>
     <option_windows_major_version>1</option_windows_major_version>
     <option_windows_nsis_file>Configs\Default\windows\RunnerInstaller.nsi</option_windows_nsis_file>
     <option_windows_product_info></option_windows_product_info>
