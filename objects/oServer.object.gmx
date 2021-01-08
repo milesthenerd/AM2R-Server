@@ -42,7 +42,7 @@ buffer = buffer_create(size, type, alignment);
 socketList = ds_list_create();
 ipList = ds_list_create();
 
-vars = ds_grid_create(3, 33);
+vars = ds_grid_create(3, 34);
 </string>
           </argument>
         </arguments>
@@ -96,7 +96,16 @@ switch(type_event){
         var socket = ds_map_find_value(async_load, "socket");
         var findsocket = ds_list_find_index(socketList, socket);
         ds_list_add(socketList, socket); 
-        show_debug_message("Client connected");
+        buffer_delete(buffer);
+        var size, type, alignment;
+        size = 1024;
+        type = buffer_grow;
+        alignment = 1;
+        buffer = buffer_create(size, type, alignment);
+        buffer_seek(buffer, buffer_seek_start, 0);
+        buffer_write(buffer, buffer_u8, 0);
+        buffer_write(buffer, buffer_u8, ds_list_size(socketList));
+        network_send_packet(socket, buffer, buffer_tell(buffer));
         break;
     case network_type_disconnect:
         var socket = ds_map_find_value(async_load, "socket");
@@ -104,15 +113,35 @@ switch(type_event){
         
         if(findsocket &gt;= 0){
             ds_list_delete(socketList, findsocket);
-            show_debug_message("Client disconnected");
         }
         break;
     case network_type_data:
         var _buffer = ds_map_find_value(async_load, "buffer");
         var socket = ds_map_find_value(async_load, "id");
         buffer_seek(_buffer, buffer_seek_start, 0);
-        ds_grid_read(vars, strict_decompress(buffer_read(_buffer, buffer_string)));
-        if(canChange){
+        msgid = buffer_read(_buffer, buffer_u8);
+        if(msgid == 0){
+            ds_grid_read(vars, strict_decompress(buffer_read(_buffer, buffer_string)));
+            clientID = buffer_read(_buffer, buffer_u8);
+            packetID = buffer_read(_buffer, buffer_u32);
+            buffer_delete(buffer);
+            var size, type, alignment;
+            size = 1024;
+            type = buffer_grow;
+            alignment = 1;
+            buffer = buffer_create(size, type, alignment);
+            buffer_seek(buffer, buffer_seek_start, 0);
+            buffer_write(buffer, buffer_u8, 1);
+            buffer_write(buffer, buffer_string, strict_compress(ds_grid_write(vars)));
+            buffer_write(buffer, buffer_u8, clientID);
+            buffer_write(buffer, buffer_u32, packetID);
+            var sockets = ds_list_size(socketList);
+            for(var i=0; i&lt;sockets; i++){
+                network_send_packet(socketList[| i], buffer, buffer_tell(buffer))
+            }
+            
+            /*
+            if(canChange){
             for(var i=0; i&lt;ds_grid_height(vars); i++){
                 if(vars[# 0, i] != vars[# 1, i]){
                     canChange = false;
@@ -127,8 +156,10 @@ switch(type_event){
                 alignment = 1;
                 buffer = buffer_create(size, type, alignment);
                 buffer_seek(buffer, buffer_seek_start, 0);
-                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 1);
                 buffer_write(buffer, buffer_string, strict_compress(ds_grid_write(vars)));
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_u32, packetID);
                 var sockets = ds_list_size(socketList);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(socketList[| i], buffer, buffer_tell(buffer))
@@ -136,7 +167,9 @@ switch(type_event){
                 canChange = true;
             }
         }
-        break;
+        */
+    }
+    break;
 }
 
 </string>
@@ -164,6 +197,7 @@ switch(type_event){
             <string>network_destroy(server);
 buffer_delete(buffer);
 ds_list_destroy(socketList);
+ds_list_destroy(vars);
 </string>
           </argument>
         </arguments>
