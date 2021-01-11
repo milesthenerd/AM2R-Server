@@ -33,6 +33,9 @@ port = 64198;
 maxClients = 8;
 server = network_create_server(type, port, maxClients);
 
+port = 64199;
+webpanel = network_create_server_raw(type, port, maxClients);
+
 var size, type, alignment;
 size = 1024;
 type = buffer_grow;
@@ -40,9 +43,18 @@ alignment = 1;
 buffer = buffer_create(size, type, alignment);
 
 socketList = ds_list_create();
-ipList = ds_list_create();
+playerList = ds_list_create();
 
-vars = ds_grid_create(3, 34);
+trackedList = ds_grid_create(3, 35);
+vars = ds_grid_create(3, 35);
+map = ds_map_create();
+
+var import = json_import("item_dict.json");
+dict = json_decode(import);
+
+queenHealth = 600;
+queenPhase = 0;
+queenState = 0;
 </string>
           </argument>
         </arguments>
@@ -106,6 +118,9 @@ switch(type_event){
         buffer_write(buffer, buffer_u8, 0);
         buffer_write(buffer, buffer_u8, ds_list_size(socketList));
         network_send_packet(socket, buffer, buffer_tell(buffer));
+        if(trackedList[# 0, 1] == 0){
+            
+        }
         break;
     case network_type_disconnect:
         var socket = ds_map_find_value(async_load, "socket");
@@ -114,41 +129,48 @@ switch(type_event){
         if(findsocket &gt;= 0){
             ds_list_delete(socketList, findsocket);
         }
+        
+        var findsocket = ds_list_find_index(playerList, socket);
+        
+        if(findsocket &gt;= 0){
+            ds_list_delete(playerList, findsocket);
+        }
         break;
     case network_type_data:
         var _buffer = ds_map_find_value(async_load, "buffer");
         var socket = ds_map_find_value(async_load, "id");
         buffer_seek(_buffer, buffer_seek_start, 0);
         msgid = buffer_read(_buffer, buffer_u8);
-        if(msgid == 0){
-            ds_grid_read(vars, strict_decompress(buffer_read(_buffer, buffer_string)));
-            clientID = buffer_read(_buffer, buffer_u8);
-            packetID = buffer_read(_buffer, buffer_u32);
-            buffer_delete(buffer);
-            var size, type, alignment;
-            size = 1024;
-            type = buffer_grow;
-            alignment = 1;
-            buffer = buffer_create(size, type, alignment);
-            buffer_seek(buffer, buffer_seek_start, 0);
-            buffer_write(buffer, buffer_u8, 1);
-            buffer_write(buffer, buffer_string, strict_compress(ds_grid_write(vars)));
-            buffer_write(buffer, buffer_u8, clientID);
-            buffer_write(buffer, buffer_u32, packetID);
-            var sockets = ds_list_size(socketList);
-            for(var i=0; i&lt;sockets; i++){
-                network_send_packet(socketList[| i], buffer, buffer_tell(buffer))
-            }
-            
-            /*
-            if(canChange){
-            for(var i=0; i&lt;ds_grid_height(vars); i++){
-                if(vars[# 0, i] != vars[# 1, i]){
-                    canChange = false;
-                    ds_grid_set(vars, 0, i, vars[# 1, i]);
+        switch(msgid){
+            case 0:
+                ds_grid_read(vars, strict_decompress(buffer_read(_buffer, buffer_string)));
+                clientID = buffer_read(_buffer, buffer_u8);
+                packetID = buffer_read(_buffer, buffer_u32);
+                buffer_delete(buffer);
+                for(var i=0; i&lt;ds_grid_height(vars); i++){
+                    if(vars[# 2, i] == 0){
+                        var arrItem = vars[# 1, i];
+                        for(var f=0; f&lt;array_height_2d(arrItem); f++){
+                            var findValue = ds_map_find_value(dict, string(arrItem[f, 1]));
+                            ds_map_add(map, findValue, arrItem[f, 0]);
+                            show_debug_message(findValue + " " + string(arrItem[f, 0]));
+                        }
+                        buffer_delete(buffer);
+                        var size, type, alignment;
+                        size = 1024;
+                        type = buffer_grow;
+                        alignment = 1;
+                        buffer = buffer_create(size, type, alignment);
+                        buffer_seek(buffer, buffer_seek_start, 0);
+                        buffer_write(buffer, buffer_u8, 255);
+                        buffer_write(buffer, buffer_string, json_encode(map));
+                        var sockets = ds_list_size(socketList);
+                        for(var v=0; v&lt;sockets; v++){
+                            network_send_raw(socketList[| i], buffer, buffer_tell(buffer));
+                        }
+                        ds_map_clear(map);
+                    }
                 }
-            }
-            if(!canChange){
                 buffer_delete(buffer);
                 var size, type, alignment;
                 size = 1024;
@@ -160,14 +182,63 @@ switch(type_event){
                 buffer_write(buffer, buffer_string, strict_compress(ds_grid_write(vars)));
                 buffer_write(buffer, buffer_u8, clientID);
                 buffer_write(buffer, buffer_u32, packetID);
-                var sockets = ds_list_size(socketList);
+                var sockets = ds_list_size(playerList);
                 for(var i=0; i&lt;sockets; i++){
-                    network_send_packet(socketList[| i], buffer, buffer_tell(buffer))
+                    if(playerList[| i] != socket){
+                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                    } else {
+                        var size, type, alignment;
+                        size = 1024;
+                        type = buffer_grow;
+                        alignment = 1;
+                        socketBuffer = buffer_create(size, type, alignment);
+                        buffer_seek(socketBuffer, buffer_seek_start, 0);
+                        buffer_write(socketBuffer, buffer_u8, 2);
+                        buffer_write(socketBuffer, buffer_string, strict_compress(ds_grid_write(vars)));
+                        buffer_write(socketBuffer, buffer_u8, clientID);
+                        network_send_packet(playerList[| i], socketBuffer, buffer_tell(socketBuffer));
+                        buffer_delete(socketBuffer);
+                    }
                 }
-                canChange = true;
-            }
-        }
-        */
+                //network_send_packet(socket, buffer, buffer_tell(buffer));
+                break;
+            case 1: 
+                var findsocket = ds_list_find_index(playerList, socket);
+                if(findsocket &lt; 0){
+                    ds_list_add(playerList, socket); 
+                }
+                break;
+            case 2:
+                var _queenHealth = buffer_read(_buffer, buffer_s16);
+                var sockets = ds_list_size(playerList);
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var phase = buffer_read(_buffer, buffer_s8);
+                var state = buffer_read(_buffer, buffer_s8);
+                if(queenHealth != _queenHealth){
+                    queenHealth = _queenHealth;
+                }
+                if(queenPhase != phase){
+                    queenPhase = phase;
+                }
+                if(queenState != state){
+                    queenState = state;
+                }
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 3);
+                buffer_write(buffer, buffer_s16, queenHealth);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s8, queenPhase);
+                buffer_write(buffer, buffer_s8, queenState);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
     }
     break;
 }
@@ -231,7 +302,7 @@ if(server &gt;= 0){
 
 draw_set_font(font0);
 draw_text(5, 5, "AM2R Server: " + string(str));
-draw_text(5, 20, "Connected Clients: " + string(ds_list_size(socketList)));
+draw_text(5, 20, "Connected Clients: " + string(ds_list_size(playerList)));
 
 </string>
           </argument>
