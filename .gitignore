@@ -3,5 +3,4 @@ Configs/*
 !Configs/Default.config.gmx
 \#backups
 exports
-datafiles
 help.rtf
