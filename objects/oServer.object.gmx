@@ -440,6 +440,19 @@ switch(type_event){
                     }
                 }
                 break;
+            case 103:
+                var ping = buffer_read(_buffer, buffer_u32);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 105);
+                buffer_write(buffer, buffer_u32, ping);
+                network_send_packet(socket, buffer, buffer_tell(buffer));
+                break;
             case 0:
                 ds_grid_read(vars, strict_decompress(buffer_read(_buffer, buffer_string)));
                 var clientID = buffer_read(_buffer, buffer_u8);
