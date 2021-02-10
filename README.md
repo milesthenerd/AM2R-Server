@@ -3,6 +3,8 @@ String compression scripts are by Homunculus: https://marketplace.yoyogames.com/
 
 m5x7 font by Daniel Linssen: https://managore.itch.io/m5x7
 
+Server icon made by Shmegleskimo.
+
 Runs on port 64198 by default but can be changed in settings.ini.
 
 The server will report whether it is running and the amount of clients connected.
