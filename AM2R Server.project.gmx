@@ -67,6 +67,8 @@
     <script>scripts\strict_encode_verb.gml</script>
     <script>scripts\strict_init.gml</script>
     <script>scripts\json_import.gml</script>
+    <script>scripts\reset_globals.gml</script>
+    <script>scripts\array_clone.gml</script>
   </scripts>
   <fonts name="fonts">
     <font>fonts\font0</font>
