@@ -25,7 +25,10 @@ repeat (80) {
     }
     i += 1;
 }
-
-
-
+global.lavastate = 0;
+global.etanks = 0;
+global.mtanks = 0;
+global.stanks = 0;
+global.ptanks = 0;
+global.monstersleft = 0;
 

@@ -69,6 +69,7 @@
     <script>scripts\json_import.gml</script>
     <script>scripts\reset_globals.gml</script>
     <script>scripts\array_clone.gml</script>
+    <script>scripts\check_items.gml</script>
   </scripts>
   <fonts name="fonts">
     <font>fonts\font0</font>

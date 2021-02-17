@@ -65,11 +65,36 @@ prevPlayerListSize = ds_list_size(playerList);
 alarm[1] = 90;
 alarm[2] = 300;
 alarm[5] = 3600;
+alarm[9] = 60;
 
 reset_globals();
 
 sendSize = 300;
 
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="2" enumb="9">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>check_items();
+alarm[9] = 60;
 </string>
           </argument>
         </arguments>
@@ -533,7 +558,7 @@ switch(type_event){
                 var arrList = idList[| i];
                 if(ID == arrList[0, 0]){
                     ID = irandom_range(1, 8);
-                    i = 0;
+                    i = -1;
                 }
             }
         } else {
@@ -834,9 +859,19 @@ switch(type_event){
                 //network_send_packet(socket, buffer, buffer_tell(buffer));
                 break;
             case 1:
+                var name = buffer_read(_buffer, buffer_string);
                 var findsocket = ds_list_find_index(playerList, socket);
                 if(findsocket &lt; 0){
                     ds_list_add(playerList, socket); 
+                }
+                if(ds_list_size(idList) &gt; 0){
+                    for(var i=0; i&lt;ds_list_size(idList); i++){
+                        var arrList = idList[| i];
+                        if(arrList[0, 1] == socket){
+                            arrList[0, 2] = name;
+                            idList[| i] = arrList;
+                        }
+                    }
                 }
                 break;
             case 2:
@@ -893,6 +928,7 @@ switch(type_event){
                 var monstersLeft = buffer_read(_buffer, buffer_s8);
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
+                global.monstersleft = monstersLeft;
                 buffer_delete(buffer);
                 var size, type, alignment;
                 size = 1024;
@@ -1058,6 +1094,11 @@ switch(type_event){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
                 ds_list_destroy(dmap);
+                
+                if(alarm[5] &lt; 360 &amp;&amp; alarm[5] &gt; 1){
+                    alarm[5] += 360;
+                    show_debug_message("dmap alarm incremented");
+                }
                 break;
             case 10:
                 var itemstaken = buffer_read(_buffer, buffer_u8);
@@ -1240,6 +1281,7 @@ switch(type_event){
                         global.item[i] = receivedItem;
                     }
                 }
+                alarm[2] = 30;
                 break;
             case 51:
                 for(var i=0; i&lt;array_length_1d(global.event); i++){
@@ -1248,6 +1290,7 @@ switch(type_event){
                         global.event[i] = receivedEvent;
                     }
                 }
+                alarm[2] = 30;
                 break;
             case 52:
                 for(var i=0; i&lt;array_length_1d(global.metdead); i++){
@@ -1256,6 +1299,7 @@ switch(type_event){
                         global.metdead[i] = receivedMetdead;
                     }
                 }
+                alarm[2] = 30;
                 break;
             case 53:
                 for(var i=0; i&lt;array_height_2d(global.dmap); i++){
@@ -1268,6 +1312,7 @@ switch(type_event){
                         }
                     }
                 }
+                alarm[5] = 30;
                 break;
     }
     break;
@@ -1332,7 +1377,52 @@ if(server &gt;= 0){
 
 draw_set_font(font0);
 draw_text(5, 5, "AM2R Server: " + string(str));
-draw_text(5, 20, "Connected Clients: " + string(ds_list_size(playerList)));
+draw_text(5, 35, "Connected Clients: " + string(ds_list_size(playerList)));
+
+draw_text(5, 75, "Energy Tanks: " + string(global.etanks) + "/10");
+draw_text(5, 105, "Missile Tanks: " + string(global.mtanks) + "/44");
+draw_text(5, 135, "Super Missile Tanks: " + string(global.stanks) + "/10");
+draw_text(5, 165, "Power Bomb Tanks: " + string(global.ptanks) + "/10");
+draw_text(5, 195, "Total Remaining Metroids: " + string(global.monstersleft));
+
+if(ds_list_size(idList) &gt; 0){
+    draw_text(5, 235, "Players:");
+    for(var i=0; i&lt;ds_list_size(idList); i++){
+        var arrList = idList[| i];
+        if(array_length_2d(arrList, 0) &gt; 2){
+            var color = c_black;
+            switch(arrList[0, 0]){
+                case 1:
+                    color = c_green;
+                    break;
+                case 2:
+                    color = c_red;
+                    break;
+                case 3:
+                    color = c_blue;
+                    break;
+                case 4:
+                    color = c_yellow;
+                    break;
+                case 5:
+                    color = c_orange;
+                    break;
+                case 6:
+                    color = c_purple;
+                    break;
+                case 7:
+                    color = c_fuchsia;
+                    break;
+                case 8:
+                    color = c_white;
+                    break;
+            }
+            draw_text_color(5, 265 + (i * 30), arrList[0, 2], color, color, color, color, 1);
+        }
+    }
+}
+
+
 
 </string>
           </argument>
