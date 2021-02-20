@@ -10,7 +10,16 @@
   <persistent>0</persistent>
   <colour>12632256</colour>
   <showcolour>-1</showcolour>
-  <code></code>
+  <code>var p_num;
+p_num = parameter_count();
+for(var i = 0; i &lt; p_num; i += 1){
+    p_string[i] = parameter_string(i);
+    switch(p_string[i]){
+        case "-nowindow":
+            draw_enable_drawevent(false);
+            break;
+    }
+}</code>
   <enableViews>0</enableViews>
   <clearViewBackground>-1</clearViewBackground>
   <clearDisplayBuffer>-1</clearDisplayBuffer>
@@ -52,6 +61,11 @@
   </views>
   <instances>
     <instance objName="oServer" x="0" y="0" name="inst_82B56698" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oPort" x="864" y="32" name="inst_3D1F61B7" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oReset" x="864" y="160" name="inst_5A73AE24" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oSave" x="864" y="224" name="inst_09F9BCBB" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oLoad" x="864" y="288" name="inst_32B28128" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oClients" x="864" y="96" name="inst_F4D6DEE6" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
   </instances>
   <tiles/>
   <PhysicsWorld>0</PhysicsWorld>
