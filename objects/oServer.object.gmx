@@ -719,6 +719,8 @@ switch(type_event){
         arr[0, 0] = ID;
         arr[0, 1] = socket;
         ds_list_add(idList, arr);
+        alarm[2] = 30;
+        alarm[5] = 30;
         break;
     case network_type_disconnect:
         var socket = ds_map_find_value(async_load, "socket");

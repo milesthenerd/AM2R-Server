@@ -91,7 +91,7 @@ if(ID == msg){
                     ini_open(working_directory + "\settings.ini");
                     ini_write_real("Settings", "port", input);
                     ini_close();
-                    alarm[0] = 120;
+                    alarm[0] = 180;
                 }
             }
         }
