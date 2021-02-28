@@ -564,7 +564,7 @@ var sockets = ds_list_size(playerList);
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
-alarm[1] = 90;
+alarm[1] = 60;
 </string>
           </argument>
         </arguments>
@@ -740,9 +740,6 @@ switch(type_event){
                 }
             }
             ds_list_delete(playerList, findsocket);
-        }
-        if(ds_list_size(playerList) == 0){
-            reset_globals();
         }
         break;
     case network_type_data:
