@@ -60,6 +60,7 @@ socketList = ds_list_create();
 playerList = ds_list_create();
 idList = ds_list_create();
 timeList = ds_list_create();
+resetList = ds_list_create();
 
 vars = ds_grid_create(3, 20);
 map = ds_map_create();
@@ -113,6 +114,7 @@ ds_list_destroy(socketList);
 ds_list_destroy(playerList);
 ds_list_destroy(idList);
 ds_list_destroy(timeList);
+ds_list_destroy(resetList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
 </string>
@@ -655,6 +657,13 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(timeList) &gt; 0){
             network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
         }
         ds_list_clear(timeList);
+    }
+}
+
+if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(resetList) &gt; 0){
+    if(ds_list_size(playerList) == ds_list_size(resetList) || ds_list_size(resetList) &gt; ds_list_size(playerList)){
+        event_user(0);
+        ds_list_clear(resetList);
     }
 }
 </string>
@@ -1291,8 +1300,8 @@ switch(type_event){
                 if(is_array(eventArr)){
                     for(var i=0; i&lt;array_length_1d(global.event); i++){
                         for(var f=0; f&lt;array_height_2d(eventArr); f++){
-                            if(i == eventArr[f, 1]){
-                                if(global.event[i] != eventArr[f, 0] &amp;&amp; eventArr[f, 0] == 1){
+                            if(i == eventArr[f, 1] &amp;&amp; eventArr[f, 1] != 102){
+                                if(global.event[i] != eventArr[f, 0] &amp;&amp; eventArr[f, 0] &gt; 0){
                                     global.event[i] = eventArr[f, 0];
                                 }
                             }
@@ -1597,7 +1606,18 @@ switch(type_event){
                     ds_list_add(timeList, gametime);
                 }
                 break;
+            case 20:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                if(ds_list_size(resetList) &gt; 0){
+                    var findReset = ds_list_find_index(resetList, clientID);
+                    if(findReset == -1){
+                        ds_list_add(resetList, clientID);
+                    }
+                } else {
+                    ds_list_add(resetList, clientID);
+                }
             case 50:
+                if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
                 for(var i=0; i&lt;array_length_1d(global.item); i++){
                     var receivedItem = buffer_read(_buffer, buffer_u8);
@@ -1608,6 +1628,7 @@ switch(type_event){
                 alarm[2] = 30;
                 break;
             case 51:
+                if(bufferSize &lt; 400) exit;
                 show_debug_message("event");
                 for(var i=0; i&lt;array_length_1d(global.event); i++){
                     if(i &lt; 350){
@@ -1620,6 +1641,7 @@ switch(type_event){
                 alarm[2] = 30;
                 break;
             case 52:
+                if(bufferSize &lt; 100) exit;
                 show_debug_message("metdead");
                 for(var i=0; i&lt;array_length_1d(global.metdead); i++){
                     var receivedMetdead = buffer_read(_buffer, buffer_u8);
@@ -1630,6 +1652,7 @@ switch(type_event){
                 alarm[2] = 30;
                 break;
             case 53:
+                if(bufferSize &lt; 6400) exit;
                 show_debug_message("dmap");
                 for(var i=0; i&lt;array_height_2d(global.dmap); i++){
                     for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
@@ -1740,7 +1763,8 @@ ds_list_destroy(list);
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>reset_globals();
+            <string>show_debug_message("event ran");
+reset_globals();
 
 buffer_delete(buffer);
 var size, type, alignment;
@@ -1782,9 +1806,17 @@ for(var i=0; i&lt;sockets; i++){
           <argument>
             <kind>1</kind>
             <string>network_destroy(server);
-buffer_delete(buffer);
+network_destroy(webpanel);
+if(buffer_exists(buffer)){
+    buffer_delete(buffer);
+}
 ds_list_destroy(socketList);
-ds_list_destroy(vars);
+ds_list_destroy(playerList);
+ds_list_destroy(idList);
+ds_list_destroy(timeList);
+ds_list_destroy(resetList);
+ds_grid_destroy(vars);
+ds_map_destroy(map);
 </string>
           </argument>
         </arguments>

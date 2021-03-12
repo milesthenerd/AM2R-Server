@@ -1,5 +1,4 @@
 /// reset_globals
-global.data = ds_list_create();
 i = 100;
 repeat (100) {
     i -= 1;
