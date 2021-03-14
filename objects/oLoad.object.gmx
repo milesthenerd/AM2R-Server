@@ -76,7 +76,7 @@
             <string>draw_self();
 if(alarm[0] &gt; 0){
     draw_set_halign(fa_right);
-    draw_text(x - 12, y + 12, "Stats loaded!");
+    draw_text(x - 12, y + 12, "Loaded slot " + string(global.slot) + "!");
     draw_set_halign(fa_left);
 }
 </string>

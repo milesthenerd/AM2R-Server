@@ -47,6 +47,7 @@
     <sprite>sprites\sLoad</sprite>
     <sprite>sprites\sSave</sprite>
     <sprite>sprites\sClients</sprite>
+    <sprite>sprites\sSlot</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -70,6 +71,7 @@
     <object>objects\oLoad</object>
     <object>objects\oReset</object>
     <object>objects\oClients</object>
+    <object>objects\oSlot</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

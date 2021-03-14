@@ -66,6 +66,7 @@ for(var i = 0; i &lt; p_num; i += 1){
     <instance objName="oSave" x="864" y="224" name="inst_09F9BCBB" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oLoad" x="864" y="288" name="inst_32B28128" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oClients" x="864" y="96" name="inst_F4D6DEE6" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oSlot" x="988" y="368" name="inst_D80C554D" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
   </instances>
   <tiles/>
   <PhysicsWorld>0</PhysicsWorld>
