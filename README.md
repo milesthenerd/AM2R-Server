@@ -1,11 +1,11 @@
 # AM2R Server
 String compression scripts are by Homunculus: https://marketplace.yoyogames.com/assets/4560/strict
 
-m5x7 font by Daniel Linssen: https://managore.itch.io/m5x7
+Server icon made by ShirtyScarab554.
 
-Runs on port 64198 by default but can be changed in settings.ini.
+Runs on port 64198 by default but can be changed within the server.
 
-The server will report whether it is running and the amount of clients connected.
+The server will report whether it is running, the amount of clients connected, current progress, and a list of player names.
 
 Full project is available here.
 
