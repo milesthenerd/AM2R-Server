@@ -48,7 +48,7 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>if(oLoad.alarm[0] &lt; 0 &amp;&amp; oSave.alarm[0] &lt; 0){
+            <string>if(oLoad.alarm[0] &lt; 0 &amp;&amp; oSave.alarm[0] &lt; 0 &amp;&amp; oLoad.alarm[1] &lt; 0){
     global.slot++;
 
     if(global.slot &gt; 3){

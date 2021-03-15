@@ -1711,6 +1711,9 @@ switch(type_event){
     ds_list_destroy(list);
     alarm[2] = 30;
     alarm[5] = 30;
+    oLoad.alarm[0] = 120;
+} else {
+    oLoad.alarm[1] = 120;
 }
 
 </string>
