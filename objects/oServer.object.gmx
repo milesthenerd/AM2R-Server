@@ -1887,9 +1887,10 @@ draw_text(5, 105, "Missile Tanks: " + string(global.mtanks) + "/44");
 draw_text(5, 135, "Super Missile Tanks: " + string(global.stanks) + "/10");
 draw_text(5, 165, "Power Bomb Tanks: " + string(global.ptanks) + "/10");
 draw_text(5, 195, "Total Remaining Metroids: " + string(global.monstersleft));
+draw_text(5, 225, "Seed: " + string(global.seed));
 
 if(ds_list_size(idList) &gt; 0){
-    draw_text(5, 235, "Players:");
+    draw_text(5, 265, "Players:");
     for(var i=0; i&lt;ds_list_size(idList); i++){
         var arrList = idList[| i];
         if(array_length_2d(arrList, 0) &gt; 2){
@@ -1920,7 +1921,7 @@ if(ds_list_size(idList) &gt; 0){
                     color = c_white;
                     break;
             }
-            draw_text_color(5, 265 + (i * 30), arrList[0, 2], color, color, color, color, 1);
+            draw_text_color(5, 265 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
         }
     }
 }
