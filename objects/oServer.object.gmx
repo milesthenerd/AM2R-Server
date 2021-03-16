@@ -731,6 +731,25 @@ switch(type_event){
         arr[0, 0] = ID;
         arr[0, 1] = socket;
         ds_list_add(idList, arr);
+        if(global.seed != 0){
+            buffer_delete(buffer);
+            var size, type, alignment;
+            size = 1024;
+            type = buffer_grow;
+            alignment = 1;
+            buffer = buffer_create(size, type, alignment);
+            buffer_seek(buffer, buffer_seek_start, 0);
+            buffer_write(buffer, buffer_u8, 4);
+            buffer_write(buffer, buffer_f64, global.seed);
+            buffer_write(buffer, buffer_u8, 100);
+            var bufferSize = buffer_tell(buffer);
+            buffer_seek(buffer, buffer_seek_start, 0);
+            buffer_write(buffer, buffer_s32, bufferSize);
+            buffer_write(buffer, buffer_u8, 4);
+            buffer_write(buffer, buffer_f64, global.seed);
+            buffer_write(buffer, buffer_u8, 100);
+            network_send_packet(socket, buffer, buffer_tell(buffer));
+        }
         alarm[2] = 30;
         alarm[5] = 30;
         break;
@@ -1155,6 +1174,7 @@ switch(type_event){
             case 3:
                 var seed = buffer_read(_buffer, buffer_f64);
                 var clientID = buffer_read(_buffer, buffer_u8);
+                global.seed = seed;
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -1311,7 +1331,7 @@ switch(type_event){
                     for(var i=0; i&lt;array_length_1d(global.event); i++){
                         for(var f=0; f&lt;array_height_2d(eventArr); f++){
                             if(i == eventArr[f, 1] &amp;&amp; eventArr[f, 1] != 102){
-                                if(global.event[i] != eventArr[f, 0] &amp;&amp; eventArr[f, 0] &gt; 0){
+                                if(global.event[i] &lt; eventArr[f, 0] &amp;&amp; eventArr[f, 0] &gt; 0){
                                     global.event[i] = eventArr[f, 0];
                                 }
                             }
@@ -1381,7 +1401,7 @@ switch(type_event){
                 }
                 
                 if(alarm[5] &lt; 300 &amp;&amp; alarm[5] &gt; 1){
-                    alarm[5] += 120;
+                    alarm[5] += 240;
                     show_debug_message("dmap alarm incremented");
                 }
                 break;
