@@ -1643,6 +1643,126 @@ switch(type_event){
                 } else {
                     ds_list_add(resetList, clientID);
                 }
+            case 21:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var dir = buffer_read(_buffer, buffer_s16);
+                var sprX = buffer_read(_buffer, buffer_s16);
+                var sprY = buffer_read(_buffer, buffer_s16);
+                var charge = buffer_read(_buffer, buffer_u8);
+                var sockets = ds_list_size(playerList);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 21);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, dir);
+                buffer_write(buffer, buffer_s16, sprX);
+                buffer_write(buffer, buffer_s16, sprY);
+                buffer_write(buffer, buffer_u8, charge);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 21);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, dir);
+                buffer_write(buffer, buffer_s16, sprX);
+                buffer_write(buffer, buffer_s16, sprY);
+                buffer_write(buffer, buffer_u8, charge);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
+            case 22:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var bombX = buffer_read(_buffer, buffer_s16);
+                var bombY = buffer_read(_buffer, buffer_s16);
+                var sockets = ds_list_size(playerList);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 22);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, bombX);
+                buffer_write(buffer, buffer_s16, bombY);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 22);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, bombX);
+                buffer_write(buffer, buffer_s16, bombY);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
+            case 23:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var currentWeapon = buffer_read(_buffer, buffer_u8);
+                var dir = buffer_read(_buffer, buffer_s16);
+                var missileX = buffer_read(_buffer, buffer_s16);
+                var missileY = buffer_read(_buffer, buffer_s16);
+                var sockets = ds_list_size(playerList);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 23);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_u8, currentWeapon);
+                buffer_write(buffer, buffer_s16, dir);
+                buffer_write(buffer, buffer_s16, missileX);
+                buffer_write(buffer, buffer_s16, missileY);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 23);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_u8, currentWeapon);
+                buffer_write(buffer, buffer_s16, dir);
+                buffer_write(buffer, buffer_s16, missileX);
+                buffer_write(buffer, buffer_s16, missileY);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
+            case 24:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var pbombX = buffer_read(_buffer, buffer_s16);
+                var pbombY = buffer_read(_buffer, buffer_s16);
+                var sockets = ds_list_size(playerList);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 24);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, pbombX);
+                buffer_write(buffer, buffer_s16, pbombY);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 24);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_s16, pbombX);
+                buffer_write(buffer, buffer_s16, pbombY);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
             case 50:
                 if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
