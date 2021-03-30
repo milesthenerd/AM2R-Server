@@ -48,6 +48,8 @@
     <sprite>sprites\sSave</sprite>
     <sprite>sprites\sClients</sprite>
     <sprite>sprites\sSlot</sprite>
+    <sprite>sprites\sBan</sprite>
+    <sprite>sprites\sKick</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -72,6 +74,10 @@
     <object>objects\oReset</object>
     <object>objects\oClients</object>
     <object>objects\oSlot</object>
+    <object>objects\oBan</object>
+    <object>objects\oBanButton</object>
+    <object>objects\oKick</object>
+    <object>objects\oKickButton</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

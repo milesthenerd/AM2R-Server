@@ -25,7 +25,9 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>randomize();
+            <string>banList = ds_list_create();
+kickList = ds_list_create();
+randomize();
 strict_init("dictionary.json");
 canChange = true;
 var type;
@@ -40,6 +42,18 @@ ini_open(working_directory + "\settings.ini");
 port = ini_read_real("Settings", "port", 64198);
 maxClients = ini_read_real("Settings", "maxplayers", 8);
 ini_close();
+
+if(!file_exists(working_directory + "\blacklist.txt")){
+    blacklist = file_text_open_write(working_directory + "\blacklist.txt");
+    file_text_close(blacklist);
+} else {
+    ds_list_clear(banList);
+    blacklist = file_text_open_read(working_directory + "\blacklist.txt");
+    while(!file_text_eof(blacklist)){
+        ds_list_add(banList, file_text_read_string(blacklist));
+        file_text_readln(blacklist)
+    }
+}
 
 if(maxClients &gt; 8){
     maxClients = 8;
@@ -118,6 +132,8 @@ ds_list_destroy(playerList);
 ds_list_destroy(idList);
 ds_list_destroy(timeList);
 ds_list_destroy(resetList);
+ds_list_destroy(banList);
+ds_list_destroy(kickList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
 </string>
@@ -691,12 +707,68 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(resetList) &gt; 0){
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>
-var type_event = ds_map_find_value(async_load, "type");
+            <string>var type_event = ds_map_find_value(async_load, "type");
+
+var ip = ds_map_find_value(async_load, "ip");
+
+var findIP = ds_list_find_index(banList, ip);
+
+var findKickIP = ds_list_find_index(kickList, ip);
+
+banSocket = ds_map_find_value(async_load, "id");
+
+if(findIP &gt;= 0 || findKickIP &gt;= 0){
+    var ban = 0;
+    if(findIP &gt;= 0) ban = 1;
+    buffer_delete(buffer);
+    var size, type, alignment;
+    size = 1024;
+    type = buffer_grow;
+    alignment = 1;
+    buffer = buffer_create(size, type, alignment);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_u8, 250);
+    buffer_write(buffer, buffer_u8, ban);
+    var bufferSize = buffer_tell(buffer);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_s32, bufferSize);
+    buffer_write(buffer, buffer_u8, 250);
+    buffer_write(buffer, buffer_u8, ban);
+    network_send_packet(banSocket, buffer, buffer_tell(buffer));
+    
+    var findsocket = ds_list_find_index(socketList, banSocket);
+    
+    if(findsocket &gt;= 0){
+        ds_list_delete(socketList, findsocket);
+    }
+        
+    var findsocket = ds_list_find_index(playerList, banSocket);
+        
+    if(findsocket &gt;= 0){
+        for(var i=0; i&lt;ds_list_size(idList); i++){
+            var arrList = idList[| i];
+            if(arrList[0, 1] == banSocket){
+                ds_list_delete(idList, i);
+            }
+        }
+        ds_list_delete(playerList, findsocket);
+            
+        if(ds_list_size(playerList) == 0){
+            with(oReset) alarm[10] = 1800;
+        }
+    }
+    
+    if(findKickIP &gt;= 0){
+        ds_list_delete(kickList, findKickIP);
+    }
+    
+    exit;
+} 
 
 switch(type_event){
     case network_type_connect:
         var socket = ds_map_find_value(async_load, "socket");
+        var socketID = ds_map_find_value(async_load, "id");
         var findsocket = ds_list_find_index(socketList, socket);
         var ID;
         var arr;
@@ -730,6 +802,7 @@ switch(type_event){
         network_send_packet(socket, buffer, buffer_tell(buffer));
         arr[0, 0] = ID;
         arr[0, 1] = socket;
+        arr[0, 3] = ip;
         ds_list_add(idList, arr);
         if(global.seed != 0){
             buffer_delete(buffer);
@@ -1643,12 +1716,14 @@ switch(type_event){
                 } else {
                     ds_list_add(resetList, clientID);
                 }
+                break;
             case 21:
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var dir = buffer_read(_buffer, buffer_s16);
                 var sprX = buffer_read(_buffer, buffer_s16);
                 var sprY = buffer_read(_buffer, buffer_s16);
                 var charge = buffer_read(_buffer, buffer_u8);
+                var sax = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -1663,6 +1738,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, sprX);
                 buffer_write(buffer, buffer_s16, sprY);
                 buffer_write(buffer, buffer_u8, charge);
+                buffer_write(buffer, buffer_u8, sax);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1672,6 +1748,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, sprX);
                 buffer_write(buffer, buffer_s16, sprY);
                 buffer_write(buffer, buffer_u8, charge);
+                buffer_write(buffer, buffer_u8, sax);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
@@ -1709,6 +1786,7 @@ switch(type_event){
                 var dir = buffer_read(_buffer, buffer_s16);
                 var missileX = buffer_read(_buffer, buffer_s16);
                 var missileY = buffer_read(_buffer, buffer_s16);
+                var sax = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -1723,6 +1801,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, dir);
                 buffer_write(buffer, buffer_s16, missileX);
                 buffer_write(buffer, buffer_s16, missileY);
+                buffer_write(buffer, buffer_u8, sax);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1732,6 +1811,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, dir);
                 buffer_write(buffer, buffer_s16, missileX);
                 buffer_write(buffer, buffer_s16, missileY);
+                buffer_write(buffer, buffer_u8, sax);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
