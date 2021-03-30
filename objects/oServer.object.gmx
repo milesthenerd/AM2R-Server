@@ -1717,6 +1717,7 @@ switch(type_event){
                     ds_list_add(resetList, clientID);
                 }
                 break;
+                /*
             case 21:
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var dir = buffer_read(_buffer, buffer_s16);
@@ -1843,6 +1844,7 @@ switch(type_event){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
                 break;
+                */
             case 50:
                 if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
