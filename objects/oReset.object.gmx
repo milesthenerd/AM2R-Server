@@ -133,7 +133,7 @@ if(alarm[0] &gt; 0){
 
 if(alarm[10] &gt; 0){
     draw_set_halign(fa_right);
-    draw_text(1008, 416, "Server resetting in " + string(floor(alarm[10] / 60)));
+    draw_text(1008, 400, "Server resetting in " + string(floor(alarm[10] / 60)));
     draw_set_halign(fa_left);
 }
 </string>

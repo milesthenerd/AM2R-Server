@@ -50,6 +50,7 @@
     <sprite>sprites\sSlot</sprite>
     <sprite>sprites\sBan</sprite>
     <sprite>sprites\sKick</sprite>
+    <sprite>sprites\sOption</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -78,6 +79,13 @@
     <object>objects\oBanButton</object>
     <object>objects\oKick</object>
     <object>objects\oKickButton</object>
+    <object>objects\oHealthSync</object>
+    <object>objects\oAmmoSync</object>
+    <object>objects\oItemSync</object>
+    <object>objects\oItemToggleSync</object>
+    <object>objects\oMetroidSync</object>
+    <object>objects\oEventSync</object>
+    <object>objects\oMapSync</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>
