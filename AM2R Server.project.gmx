@@ -51,6 +51,7 @@
     <sprite>sprites\sBan</sprite>
     <sprite>sprites\sKick</sprite>
     <sprite>sprites\sOption</sprite>
+    <sprite>sprites\sResetToggles</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -86,6 +87,7 @@
     <object>objects\oMetroidSync</object>
     <object>objects\oEventSync</object>
     <object>objects\oMapSync</object>
+    <object>objects\oResetToggles</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

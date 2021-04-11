@@ -88,6 +88,7 @@ queenState = 0;
 
 prevPlayerListSize = ds_list_size(playerList);
 
+alarm[0] = 90;
 alarm[1] = 90;
 alarm[2] = 300;
 alarm[3] = 360;
@@ -102,6 +103,8 @@ global.slot = 1;
 var slotStr = string(global.slot);
 
 global.saveString = "\save" + slotStr + ".txt";
+
+syncedDifficulty = 0;
 </string>
           </argument>
         </arguments>
@@ -621,7 +624,25 @@ alarm[1] = 60;
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>canChange = true;
+            <string>var sockets = ds_list_size(playerList);
+buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 29);
+buffer_write(buffer, buffer_u8, syncedDifficulty);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 29);
+buffer_write(buffer, buffer_u8, syncedDifficulty);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+alarm[0] = 90;
 </string>
           </argument>
         </arguments>
@@ -836,6 +857,7 @@ switch(type_event){
             buffer_write(buffer, buffer_u8, 100);
             network_send_packet(socket, buffer, buffer_tell(buffer));
         }
+        alarm[0] = 5;
         alarm[2] = 30;
         alarm[5] = 30;
         break;
@@ -2037,6 +2059,28 @@ switch(type_event){
                     network_send_packet(socket, buffer, buffer_tell(buffer));
                 }
                 break;
+            case 29:
+                var syncDiff = buffer_read(_buffer, buffer_u8);
+                var sockets = ds_list_size(playerList);
+                if(syncedDifficulty != syncDiff) syncedDifficulty = syncDiff;
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 29);
+                buffer_write(buffer, buffer_u8, syncDiff);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 29);
+                buffer_write(buffer, buffer_u8, syncDiff);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
             case 50:
                 if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
@@ -2239,6 +2283,8 @@ ds_list_destroy(playerList);
 ds_list_destroy(idList);
 ds_list_destroy(timeList);
 ds_list_destroy(resetList);
+ds_list_destroy(banList);
+ds_list_destroy(kickList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
 </string>
@@ -2271,6 +2317,21 @@ if(server &gt;= 0){
     str = "Not running, cannot open port";
 }
 
+var diffStr;
+switch(syncedDifficulty){
+    case 0:
+        diffStr = "Easy";
+        break;
+    case 1:
+        diffStr = "Normal";
+        break;
+    case 2:
+        diffStr = "Hard";
+        break;
+    case 3:
+        diffStr = "Fusion";
+        break;
+}
 
 draw_set_font(font0);
 draw_text(5, 5, "AM2R Server: " + string(str));
@@ -2282,9 +2343,10 @@ draw_text(5, 135, "Super Missile Tanks: " + string(global.stanks) + "/10");
 draw_text(5, 165, "Power Bomb Tanks: " + string(global.ptanks) + "/10");
 draw_text(5, 195, "Total Remaining Metroids: " + string(global.monstersleft));
 draw_text(5, 225, "Seed: " + string(global.seed));
+draw_text(5, 255, "Difficulty: " + string(diffStr));
 
 if(ds_list_size(idList) &gt; 0){
-    draw_text(5, 265, "Players:");
+    draw_text(5, 285, "Players:");
     for(var i=0; i&lt;ds_list_size(idList); i++){
         var arrList = idList[| i];
         if(array_length_2d(arrList, 0) &gt; 2){
@@ -2315,7 +2377,7 @@ if(ds_list_size(idList) &gt; 0){
                     color = c_white;
                     break;
             }
-            draw_text_color(5, 265 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
+            draw_text_color(5, 285 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
         }
     }
 }
