@@ -105,6 +105,7 @@ var slotStr = string(global.slot);
 global.saveString = "\save" + slotStr + ".txt";
 
 syncedDifficulty = 0;
+syncedELM = 0;
 </string>
           </argument>
         </arguments>
@@ -639,6 +640,24 @@ buffer_seek(buffer, buffer_seek_start, 0);
 buffer_write(buffer, buffer_s32, bufferSize);
 buffer_write(buffer, buffer_u8, 29);
 buffer_write(buffer, buffer_u8, syncedDifficulty);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
+buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 30);
+buffer_write(buffer, buffer_u8, syncedELM);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 30);
+buffer_write(buffer, buffer_u8, syncedELM);
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
@@ -2081,6 +2100,28 @@ switch(type_event){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
                 break;
+            case 30:
+                var syncELM = buffer_read(_buffer, buffer_u8);
+                var sockets = ds_list_size(playerList);
+                if(syncedELM != syncELM) syncedELM = syncELM;
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 30);
+                buffer_write(buffer, buffer_u8, syncELM);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 30);
+                buffer_write(buffer, buffer_u8, syncELM);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
             case 50:
                 if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
@@ -2333,6 +2374,16 @@ switch(syncedDifficulty){
         break;
 }
 
+var ELMStr;
+switch(syncedELM){
+    case 0:
+        ELMStr = "Disabled";
+        break;
+    case 1:
+        ELMStr = "Enabled";
+        break;
+}
+
 draw_set_font(font0);
 draw_text(5, 5, "AM2R Server: " + string(str));
 draw_text(5, 35, "Connected Clients: " + string(ds_list_size(playerList)) + "/" + string(maxClients));
@@ -2344,9 +2395,10 @@ draw_text(5, 165, "Power Bomb Tanks: " + string(global.ptanks) + "/10");
 draw_text(5, 195, "Total Remaining Metroids: " + string(global.monstersleft));
 draw_text(5, 225, "Seed: " + string(global.seed));
 draw_text(5, 255, "Difficulty: " + string(diffStr));
+draw_text(5, 285, "Extreme Lab Metroids: " + string(ELMStr));
 
 if(ds_list_size(idList) &gt; 0){
-    draw_text(5, 285, "Players:");
+    draw_text(5, 315, "Players:");
     for(var i=0; i&lt;ds_list_size(idList); i++){
         var arrList = idList[| i];
         if(array_length_2d(arrList, 0) &gt; 2){
@@ -2377,7 +2429,7 @@ if(ds_list_size(idList) &gt; 0){
                     color = c_white;
                     break;
             }
-            draw_text_color(5, 285 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
+            draw_text_color(5, 317 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
         }
     }
 }

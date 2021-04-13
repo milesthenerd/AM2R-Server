@@ -31,3 +31,5 @@ global.stanks = 0;
 global.ptanks = 0;
 global.monstersleft = 0;
 syncedDifficulty = 0;
+syncedELM = 0;
+seed = 0;

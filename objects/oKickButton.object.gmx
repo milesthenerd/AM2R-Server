@@ -44,7 +44,7 @@
         if(!is_undefined(oServer.idList[| i])){
             var arr = oServer.idList[| i];
             var arrID = arr[0, 0];
-            if(arrID = ID) y = 287 + ((i + 1) * 30);
+            if(arrID = ID) y = 317 + ((i + 1) * 30);
         }
     }
 } else instance_destroy();
