@@ -73,7 +73,7 @@
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>msg = get_integer_async("Type in the max number of clients you want to connect. The server will automatically restart.", 8);
+            <string>msg = get_integer_async("Type in the max number of clients you want to connect. The server will automatically restart.", 16);
 </string>
           </argument>
         </arguments>
@@ -103,7 +103,7 @@ if(ID == msg){
         var input = ds_map_find_value(async_load, "value");
         if(is_real(input)){
             ini_open(working_directory + "\settings.ini");
-            var maxClients = ini_read_real("Settings", "maxplayers", 8);
+            var maxClients = ini_read_real("Settings", "maxplayers", 16);
             ini_close();
             
             if(input != maxClients){

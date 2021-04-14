@@ -35,12 +35,12 @@ type = network_socket_tcp;
 if(!file_exists(working_directory + "\settings.ini")){
     ini_open(working_directory + "\settings.ini");
     ini_write_real("Settings", "port", 64198);
-    ini_write_real("Settings", "maxplayers", 8);
+    ini_write_real("Settings", "maxplayers", 16);
     ini_close();
 }
 ini_open(working_directory + "\settings.ini");
 port = ini_read_real("Settings", "port", 64198);
-maxClients = ini_read_real("Settings", "maxplayers", 8);
+maxClients = ini_read_real("Settings", "maxplayers", 16);
 ini_close();
 
 if(!file_exists(working_directory + "\blacklist.txt")){
@@ -55,8 +55,8 @@ if(!file_exists(working_directory + "\blacklist.txt")){
     }
 }
 
-if(maxClients &gt; 8){
-    maxClients = 8;
+if(maxClients &gt; 16){
+    maxClients = 16;
 }
 
 server = network_create_server(type, port, maxClients);
@@ -827,16 +827,16 @@ switch(type_event){
         var arr;
         ds_list_add(socketList, socket); 
         if(ds_list_size(idList) &gt; 0){
-            ID = irandom_range(1, 8);
+            ID = irandom_range(1, 16);
             for(var i=0; i&lt;ds_list_size(idList); i++){
                 var arrList = idList[| i];
                 if(ID == arrList[0, 0]){
-                    ID = irandom_range(1, 8);
+                    ID = irandom_range(1, 16);
                     i = -1;
                 }
             }
         } else {
-            ID = irandom_range(1, 8);
+            ID = irandom_range(1, 16);
         }
         buffer_delete(buffer);
         var size, type, alignment;
@@ -910,10 +910,10 @@ switch(type_event){
         var bufferSize = buffer_get_size(_buffer);
         buffer_seek(_buffer, buffer_seek_start, 0);
         var bufferSizePacket = buffer_read(_buffer, buffer_s32);
-        show_debug_message(string(bufferSize) + " " + string(bufferSizePacket));
+        //show_debug_message(string(bufferSize) + " " + string(bufferSizePacket));
         if(!is_real(bufferSizePacket)) exit;
         if(bufferSizePacket + 4 != bufferSize) exit;
-        show_debug_message("done");
+        //show_debug_message("done");
         msgid = buffer_read(_buffer, buffer_u8);
         switch(msgid){
             case 254:
@@ -959,7 +959,7 @@ switch(type_event){
                     for(var i=0; i&lt;ds_list_size(idList); i++){
                         var arrList = idList[| i];
                         if(clientID == arrList[0, 0]){
-                            if(preferredID &gt;= 1 &amp;&amp; preferredID &lt;= 8){
+                            if(preferredID &gt;= 1 &amp;&amp; preferredID &lt;= 16){
                                 if(findID == -1){
                                     arrList[0, 0] = preferredID;
                                     idList[| i] = arrList;
@@ -1022,6 +1022,7 @@ switch(type_event){
                 var clientBlend = buffer_read(_buffer, buffer_s16);
                 var clientFXTimer = buffer_read(_buffer, buffer_s8);
                 var clientRoomPrev = buffer_read(_buffer, buffer_s16);
+                var clientState = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -1050,6 +1051,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, clientBlend);
                 buffer_write(buffer, buffer_s8, clientFXTimer);
                 buffer_write(buffer, buffer_s16, clientRoomPrev);
+                buffer_write(buffer, buffer_u8, clientState);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1073,6 +1075,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, clientBlend);
                 buffer_write(buffer, buffer_s8, clientFXTimer);
                 buffer_write(buffer, buffer_s16, clientRoomPrev);
+                buffer_write(buffer, buffer_u8, clientState);
                 for(var i=0; i&lt;sockets; i++){
                     if(playerList[| i] != socket){
                         network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
@@ -2427,6 +2430,30 @@ if(ds_list_size(idList) &gt; 0){
                     break;
                 case 8:
                     color = c_white;
+                    break;
+                case 9:
+                    color = make_color_rgb(204, 255, 83);
+                    break;
+                case 10:
+                    color = make_color_rgb(255, 109, 51);
+                    break;
+                case 11:
+                    color = make_color_rgb(105, 165, 255);
+                    break;
+                case 12:
+                    color = make_color_rgb(255, 198, 45);
+                    break;
+                case 13:
+                    color = make_color_rgb(229, 162, 97);
+                    break;
+                case 14:
+                    color = make_color_rgb(155, 88, 255);
+                    break;
+                case 15:
+                    color = make_color_rgb(254, 4, 222);
+                    break;
+                case 16:
+                    color = make_color_rgb(163, 217, 184);
                     break;
             }
             draw_text_color(5, 317 + ((i + 1) * 30), arrList[0, 2], color, color, color, color, 1);
