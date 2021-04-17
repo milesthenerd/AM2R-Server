@@ -52,6 +52,8 @@
     <sprite>sprites\sKick</sprite>
     <sprite>sprites\sOption</sprite>
     <sprite>sprites\sResetToggles</sprite>
+    <sprite>sprites\sDifficulty</sprite>
+    <sprite>sprites\sELM</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -88,7 +90,10 @@
     <object>objects\oMetroidSync</object>
     <object>objects\oEventSync</object>
     <object>objects\oMapSync</object>
+    <object>objects\oMapPlayerIconSync</object>
     <object>objects\oResetToggles</object>
+    <object>objects\oDifficulty</object>
+    <object>objects\oELM</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

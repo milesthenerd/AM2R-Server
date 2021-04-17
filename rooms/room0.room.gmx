@@ -67,6 +67,7 @@ for(var i = 0; i &lt; p_num; i += 1){
     <instance objName="oMetroidSync" x="1248" y="608" name="inst_C418F76A" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oEventSync" x="1248" y="640" name="inst_C5CD645D" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oMapSync" x="1248" y="672" name="inst_C0351002" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oMapPlayerIconSync" x="1248" y="704" name="inst_4E02390F" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oSlot" x="1244" y="368" name="inst_D80C554D" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oServer" x="0" y="0" name="inst_82B56698" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oPort" x="1120" y="32" name="inst_3D1F61B7" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
@@ -76,7 +77,9 @@ for(var i = 0; i &lt; p_num; i += 1){
     <instance objName="oClients" x="1120" y="96" name="inst_F4D6DEE6" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oBan" x="32" y="0" name="inst_7FAA6488" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oKick" x="64" y="0" name="inst_ABF5C158" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
-    <instance objName="oResetToggles" x="1120" y="704" name="inst_0FCAA796" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oResetToggles" x="1120" y="736" name="inst_0FCAA796" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oDifficulty" x="1120" y="800" name="inst_AB28A23B" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oELM" x="1120" y="864" name="inst_66269891" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
   </instances>
   <tiles/>
   <PhysicsWorld>0</PhysicsWorld>

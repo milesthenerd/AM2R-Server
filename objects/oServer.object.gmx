@@ -104,7 +104,7 @@ var slotStr = string(global.slot);
 
 global.saveString = "\save" + slotStr + ".txt";
 
-syncedDifficulty = 0;
+syncedDifficulty = 1;
 syncedELM = 0;
 </string>
           </argument>
@@ -1088,7 +1088,7 @@ switch(type_event){
                 var clientMapX = buffer_read(_buffer, buffer_s16);
                 var clientMapY = buffer_read(_buffer, buffer_s16);
                 var sockets = ds_list_size(playerList);
-                if(!global.mapSync){
+                if(!global.mapPlayerIconSync){
                     clientMapX = 3;
                     clientMapY = 3;
                 }
@@ -1561,8 +1561,8 @@ switch(type_event){
                     }
                 }
                 
-                if(alarm[5] &lt; 300 &amp;&amp; alarm[5] &gt; 1){
-                    alarm[5] += 240;
+                if(alarm[5] &lt; 120 &amp;&amp; alarm[5] &gt; 1){
+                    alarm[5] += 120;
                     show_debug_message("dmap alarm incremented");
                 }
                 break;

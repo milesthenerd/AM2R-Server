@@ -30,6 +30,6 @@ global.mtanks = 0;
 global.stanks = 0;
 global.ptanks = 0;
 global.monstersleft = 0;
-syncedDifficulty = 0;
+syncedDifficulty = 1;
 syncedELM = 0;
 global.seed = 0;
