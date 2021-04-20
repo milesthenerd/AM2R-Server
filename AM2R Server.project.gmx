@@ -54,6 +54,7 @@
     <sprite>sprites\sResetToggles</sprite>
     <sprite>sprites\sDifficulty</sprite>
     <sprite>sprites\sELM</sprite>
+    <sprite>sprites\sBlacklistReset</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -94,6 +95,7 @@
     <object>objects\oResetToggles</object>
     <object>objects\oDifficulty</object>
     <object>objects\oELM</object>
+    <object>objects\oBlacklistReset</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>
