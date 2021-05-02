@@ -60,6 +60,7 @@ for(var i = 0; i &lt; p_num; i += 1){
     <view visible="0" objName="&lt;undefined&gt;" xview="0" yview="0" wview="1024" hview="768" xport="0" yport="0" wport="1024" hport="768" hborder="32" vborder="32" hspeed="-1" vspeed="-1"/>
   </views>
   <instances>
+    <instance objName="oControl" x="96" y="0" name="inst_122A8A01" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oHealthSync" x="1248" y="480" name="inst_A02B42D3" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oAmmoSync" x="1248" y="512" name="inst_7D587D5B" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oItemSync" x="1248" y="544" name="inst_1EB7ED70" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
@@ -80,7 +81,10 @@ for(var i = 0; i &lt; p_num; i += 1){
     <instance objName="oResetToggles" x="1120" y="736" name="inst_0FCAA796" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oDifficulty" x="1120" y="800" name="inst_AB28A23B" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
     <instance objName="oELM" x="1120" y="864" name="inst_66269891" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
-    <instance objName="oBlacklistReset" x="552" y="896" name="inst_FACA1F74" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oBlacklistReset" x="712" y="896" name="inst_FACA1F74" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oGenerateSeed" x="520" y="896" name="inst_044E107B" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oCycleRando" x="904" y="896" name="inst_01148158" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
+    <instance objName="oCustomSeed" x="328" y="896" name="inst_3C6FBD9B" locked="0" code="" scaleX="1" scaleY="1" colour="4294967295" rotation="0"/>
   </instances>
   <tiles/>
   <PhysicsWorld>0</PhysicsWorld>

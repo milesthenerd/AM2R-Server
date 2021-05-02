@@ -33,3 +33,6 @@ global.monstersleft = 0;
 syncedDifficulty = 1;
 syncedELM = 0;
 global.seed = 0;
+global.rando = 1;
+
+scr_default_global_items();

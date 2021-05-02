@@ -95,6 +95,7 @@ alarm[3] = 360;
 alarm[4] = 420;
 alarm[5] = 3600;
 alarm[9] = 60;
+alarm[10] = 600;
 
 reset_globals();
 
@@ -142,6 +143,249 @@ ds_list_destroy(banList);
 ds_list_destroy(kickList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="2" enumb="10">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>if(global.seed != 0){
+    buffer_delete(buffer);
+    var size, type, alignment;
+    size = 1024;
+    type = buffer_grow;
+    alignment = 1;
+    buffer = buffer_create(size, type, alignment);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_u8, 4);
+    buffer_write(buffer, buffer_f64, global.seed);
+    buffer_write(buffer, buffer_u8, 100);
+    
+    //Power-ups
+    buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+    buffer_write(buffer, buffer_s16, oControl.mod_spider);
+    buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+    buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+    buffer_write(buffer, buffer_s16, oControl.mod_varia);
+    buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+    buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+    buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+    buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+    buffer_write(buffer, buffer_s16, oControl.mod_charge);
+    buffer_write(buffer, buffer_s16, oControl.mod_ice);
+    buffer_write(buffer, buffer_s16, oControl.mod_wave);
+    buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+    buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+    
+    //Missiles
+    buffer_write(buffer, buffer_s16, oControl.mod_52);
+    buffer_write(buffer, buffer_s16, oControl.mod_53);
+    buffer_write(buffer, buffer_s16, oControl.mod_54);
+    buffer_write(buffer, buffer_s16, oControl.mod_55);
+    buffer_write(buffer, buffer_s16, oControl.mod_56);
+    buffer_write(buffer, buffer_s16, oControl.mod_57);
+    buffer_write(buffer, buffer_s16, oControl.mod_60);
+    buffer_write(buffer, buffer_s16, oControl.mod_100);
+    buffer_write(buffer, buffer_s16, oControl.mod_101);
+    buffer_write(buffer, buffer_s16, oControl.mod_102);
+    buffer_write(buffer, buffer_s16, oControl.mod_104);
+    buffer_write(buffer, buffer_s16, oControl.mod_105);
+    buffer_write(buffer, buffer_s16, oControl.mod_106);
+    buffer_write(buffer, buffer_s16, oControl.mod_107);
+    buffer_write(buffer, buffer_s16, oControl.mod_109);
+    buffer_write(buffer, buffer_s16, oControl.mod_111);
+    buffer_write(buffer, buffer_s16, oControl.mod_150);
+    buffer_write(buffer, buffer_s16, oControl.mod_151);
+    buffer_write(buffer, buffer_s16, oControl.mod_152);
+    buffer_write(buffer, buffer_s16, oControl.mod_153);
+    buffer_write(buffer, buffer_s16, oControl.mod_154);
+    buffer_write(buffer, buffer_s16, oControl.mod_155);
+    buffer_write(buffer, buffer_s16, oControl.mod_156);
+    buffer_write(buffer, buffer_s16, oControl.mod_159);
+    buffer_write(buffer, buffer_s16, oControl.mod_161);
+    buffer_write(buffer, buffer_s16, oControl.mod_163);
+    buffer_write(buffer, buffer_s16, oControl.mod_202);
+    buffer_write(buffer, buffer_s16, oControl.mod_203);
+    buffer_write(buffer, buffer_s16, oControl.mod_204);
+    buffer_write(buffer, buffer_s16, oControl.mod_205);
+    buffer_write(buffer, buffer_s16, oControl.mod_208);
+    buffer_write(buffer, buffer_s16, oControl.mod_210);
+    buffer_write(buffer, buffer_s16, oControl.mod_211);
+    buffer_write(buffer, buffer_s16, oControl.mod_214);
+    buffer_write(buffer, buffer_s16, oControl.mod_250);
+    buffer_write(buffer, buffer_s16, oControl.mod_252);
+    buffer_write(buffer, buffer_s16, oControl.mod_255);
+    buffer_write(buffer, buffer_s16, oControl.mod_257);
+    buffer_write(buffer, buffer_s16, oControl.mod_259);
+    buffer_write(buffer, buffer_s16, oControl.mod_303);
+    buffer_write(buffer, buffer_s16, oControl.mod_304);
+    buffer_write(buffer, buffer_s16, oControl.mod_307);
+    buffer_write(buffer, buffer_s16, oControl.mod_308);
+    buffer_write(buffer, buffer_s16, oControl.mod_309);
+    
+    //Super Missiles
+    buffer_write(buffer, buffer_s16, oControl.mod_51);
+    buffer_write(buffer, buffer_s16, oControl.mod_110);
+    buffer_write(buffer, buffer_s16, oControl.mod_162);
+    buffer_write(buffer, buffer_s16, oControl.mod_206);
+    buffer_write(buffer, buffer_s16, oControl.mod_207);
+    buffer_write(buffer, buffer_s16, oControl.mod_209);
+    buffer_write(buffer, buffer_s16, oControl.mod_215);
+    buffer_write(buffer, buffer_s16, oControl.mod_256);
+    buffer_write(buffer, buffer_s16, oControl.mod_300);
+    buffer_write(buffer, buffer_s16, oControl.mod_305);
+    
+    //Energy Tanks
+    buffer_write(buffer, buffer_s16, oControl.mod_50);
+    buffer_write(buffer, buffer_s16, oControl.mod_103);
+    buffer_write(buffer, buffer_s16, oControl.mod_108);
+    buffer_write(buffer, buffer_s16, oControl.mod_157);
+    buffer_write(buffer, buffer_s16, oControl.mod_158);
+    buffer_write(buffer, buffer_s16, oControl.mod_200);
+    buffer_write(buffer, buffer_s16, oControl.mod_201);
+    buffer_write(buffer, buffer_s16, oControl.mod_251);
+    buffer_write(buffer, buffer_s16, oControl.mod_254);
+    buffer_write(buffer, buffer_s16, oControl.mod_306);
+    
+    //Power Bombs
+    buffer_write(buffer, buffer_s16, oControl.mod_58);
+    buffer_write(buffer, buffer_s16, oControl.mod_59);
+    buffer_write(buffer, buffer_s16, oControl.mod_112);
+    buffer_write(buffer, buffer_s16, oControl.mod_160);
+    buffer_write(buffer, buffer_s16, oControl.mod_212);
+    buffer_write(buffer, buffer_s16, oControl.mod_213);
+    buffer_write(buffer, buffer_s16, oControl.mod_253);
+    buffer_write(buffer, buffer_s16, oControl.mod_258);
+    buffer_write(buffer, buffer_s16, oControl.mod_301);
+    buffer_write(buffer, buffer_s16, oControl.mod_302);
+    
+    var bufferSize = buffer_tell(buffer);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_s32, bufferSize);
+    buffer_write(buffer, buffer_u8, 4);
+    buffer_write(buffer, buffer_f64, global.seed);
+    buffer_write(buffer, buffer_u8, 100);
+    
+    //Power-ups
+    buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+    buffer_write(buffer, buffer_s16, oControl.mod_spider);
+    buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+    buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+    buffer_write(buffer, buffer_s16, oControl.mod_varia);
+    buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+    buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+    buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+    buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+    buffer_write(buffer, buffer_s16, oControl.mod_charge);
+    buffer_write(buffer, buffer_s16, oControl.mod_ice);
+    buffer_write(buffer, buffer_s16, oControl.mod_wave);
+    buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+    buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+    
+    //Missiles
+    buffer_write(buffer, buffer_s16, oControl.mod_52);
+    buffer_write(buffer, buffer_s16, oControl.mod_53);
+    buffer_write(buffer, buffer_s16, oControl.mod_54);
+    buffer_write(buffer, buffer_s16, oControl.mod_55);
+    buffer_write(buffer, buffer_s16, oControl.mod_56);
+    buffer_write(buffer, buffer_s16, oControl.mod_57);
+    buffer_write(buffer, buffer_s16, oControl.mod_60);
+    buffer_write(buffer, buffer_s16, oControl.mod_100);
+    buffer_write(buffer, buffer_s16, oControl.mod_101);
+    buffer_write(buffer, buffer_s16, oControl.mod_102);
+    buffer_write(buffer, buffer_s16, oControl.mod_104);
+    buffer_write(buffer, buffer_s16, oControl.mod_105);
+    buffer_write(buffer, buffer_s16, oControl.mod_106);
+    buffer_write(buffer, buffer_s16, oControl.mod_107);
+    buffer_write(buffer, buffer_s16, oControl.mod_109);
+    buffer_write(buffer, buffer_s16, oControl.mod_111);
+    buffer_write(buffer, buffer_s16, oControl.mod_150);
+    buffer_write(buffer, buffer_s16, oControl.mod_151);
+    buffer_write(buffer, buffer_s16, oControl.mod_152);
+    buffer_write(buffer, buffer_s16, oControl.mod_153);
+    buffer_write(buffer, buffer_s16, oControl.mod_154);
+    buffer_write(buffer, buffer_s16, oControl.mod_155);
+    buffer_write(buffer, buffer_s16, oControl.mod_156);
+    buffer_write(buffer, buffer_s16, oControl.mod_159);
+    buffer_write(buffer, buffer_s16, oControl.mod_161);
+    buffer_write(buffer, buffer_s16, oControl.mod_163);
+    buffer_write(buffer, buffer_s16, oControl.mod_202);
+    buffer_write(buffer, buffer_s16, oControl.mod_203);
+    buffer_write(buffer, buffer_s16, oControl.mod_204);
+    buffer_write(buffer, buffer_s16, oControl.mod_205);
+    buffer_write(buffer, buffer_s16, oControl.mod_208);
+    buffer_write(buffer, buffer_s16, oControl.mod_210);
+    buffer_write(buffer, buffer_s16, oControl.mod_211);
+    buffer_write(buffer, buffer_s16, oControl.mod_214);
+    buffer_write(buffer, buffer_s16, oControl.mod_250);
+    buffer_write(buffer, buffer_s16, oControl.mod_252);
+    buffer_write(buffer, buffer_s16, oControl.mod_255);
+    buffer_write(buffer, buffer_s16, oControl.mod_257);
+    buffer_write(buffer, buffer_s16, oControl.mod_259);
+    buffer_write(buffer, buffer_s16, oControl.mod_303);
+    buffer_write(buffer, buffer_s16, oControl.mod_304);
+    buffer_write(buffer, buffer_s16, oControl.mod_307);
+    buffer_write(buffer, buffer_s16, oControl.mod_308);
+    buffer_write(buffer, buffer_s16, oControl.mod_309);
+    
+    //Super Missiles
+    buffer_write(buffer, buffer_s16, oControl.mod_51);
+    buffer_write(buffer, buffer_s16, oControl.mod_110);
+    buffer_write(buffer, buffer_s16, oControl.mod_162);
+    buffer_write(buffer, buffer_s16, oControl.mod_206);
+    buffer_write(buffer, buffer_s16, oControl.mod_207);
+    buffer_write(buffer, buffer_s16, oControl.mod_209);
+    buffer_write(buffer, buffer_s16, oControl.mod_215);
+    buffer_write(buffer, buffer_s16, oControl.mod_256);
+    buffer_write(buffer, buffer_s16, oControl.mod_300);
+    buffer_write(buffer, buffer_s16, oControl.mod_305);
+    
+    //Energy Tanks
+    buffer_write(buffer, buffer_s16, oControl.mod_50);
+    buffer_write(buffer, buffer_s16, oControl.mod_103);
+    buffer_write(buffer, buffer_s16, oControl.mod_108);
+    buffer_write(buffer, buffer_s16, oControl.mod_157);
+    buffer_write(buffer, buffer_s16, oControl.mod_158);
+    buffer_write(buffer, buffer_s16, oControl.mod_200);
+    buffer_write(buffer, buffer_s16, oControl.mod_201);
+    buffer_write(buffer, buffer_s16, oControl.mod_251);
+    buffer_write(buffer, buffer_s16, oControl.mod_254);
+    buffer_write(buffer, buffer_s16, oControl.mod_306);
+    
+    //Power Bombs
+    buffer_write(buffer, buffer_s16, oControl.mod_58);
+    buffer_write(buffer, buffer_s16, oControl.mod_59);
+    buffer_write(buffer, buffer_s16, oControl.mod_112);
+    buffer_write(buffer, buffer_s16, oControl.mod_160);
+    buffer_write(buffer, buffer_s16, oControl.mod_212);
+    buffer_write(buffer, buffer_s16, oControl.mod_213);
+    buffer_write(buffer, buffer_s16, oControl.mod_253);
+    buffer_write(buffer, buffer_s16, oControl.mod_258);
+    buffer_write(buffer, buffer_s16, oControl.mod_301);
+    buffer_write(buffer, buffer_s16, oControl.mod_302);
+
+    var sockets = ds_list_size(playerList);
+    for(var i=0; i&lt;sockets; i++){
+        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+    }
+}
+alarm[10] = 600;
 </string>
           </argument>
         </arguments>
@@ -868,12 +1112,209 @@ switch(type_event){
             buffer_write(buffer, buffer_u8, 4);
             buffer_write(buffer, buffer_f64, global.seed);
             buffer_write(buffer, buffer_u8, 100);
+            
+            //Power-ups
+            buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+            buffer_write(buffer, buffer_s16, oControl.mod_spider);
+            buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+            buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+            buffer_write(buffer, buffer_s16, oControl.mod_varia);
+            buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+            buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+            buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+            buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+            buffer_write(buffer, buffer_s16, oControl.mod_charge);
+            buffer_write(buffer, buffer_s16, oControl.mod_ice);
+            buffer_write(buffer, buffer_s16, oControl.mod_wave);
+            buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+            buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+            
+            //Missiles
+            buffer_write(buffer, buffer_s16, oControl.mod_52);
+            buffer_write(buffer, buffer_s16, oControl.mod_53);
+            buffer_write(buffer, buffer_s16, oControl.mod_54);
+            buffer_write(buffer, buffer_s16, oControl.mod_55);
+            buffer_write(buffer, buffer_s16, oControl.mod_56);
+            buffer_write(buffer, buffer_s16, oControl.mod_57);
+            buffer_write(buffer, buffer_s16, oControl.mod_60);
+            buffer_write(buffer, buffer_s16, oControl.mod_100);
+            buffer_write(buffer, buffer_s16, oControl.mod_101);
+            buffer_write(buffer, buffer_s16, oControl.mod_102);
+            buffer_write(buffer, buffer_s16, oControl.mod_104);
+            buffer_write(buffer, buffer_s16, oControl.mod_105);
+            buffer_write(buffer, buffer_s16, oControl.mod_106);
+            buffer_write(buffer, buffer_s16, oControl.mod_107);
+            buffer_write(buffer, buffer_s16, oControl.mod_109);
+            buffer_write(buffer, buffer_s16, oControl.mod_111);
+            buffer_write(buffer, buffer_s16, oControl.mod_150);
+            buffer_write(buffer, buffer_s16, oControl.mod_151);
+            buffer_write(buffer, buffer_s16, oControl.mod_152);
+            buffer_write(buffer, buffer_s16, oControl.mod_153);
+            buffer_write(buffer, buffer_s16, oControl.mod_154);
+            buffer_write(buffer, buffer_s16, oControl.mod_155);
+            buffer_write(buffer, buffer_s16, oControl.mod_156);
+            buffer_write(buffer, buffer_s16, oControl.mod_159);
+            buffer_write(buffer, buffer_s16, oControl.mod_161);
+            buffer_write(buffer, buffer_s16, oControl.mod_163);
+            buffer_write(buffer, buffer_s16, oControl.mod_202);
+            buffer_write(buffer, buffer_s16, oControl.mod_203);
+            buffer_write(buffer, buffer_s16, oControl.mod_204);
+            buffer_write(buffer, buffer_s16, oControl.mod_205);
+            buffer_write(buffer, buffer_s16, oControl.mod_208);
+            buffer_write(buffer, buffer_s16, oControl.mod_210);
+            buffer_write(buffer, buffer_s16, oControl.mod_211);
+            buffer_write(buffer, buffer_s16, oControl.mod_214);
+            buffer_write(buffer, buffer_s16, oControl.mod_250);
+            buffer_write(buffer, buffer_s16, oControl.mod_252);
+            buffer_write(buffer, buffer_s16, oControl.mod_255);
+            buffer_write(buffer, buffer_s16, oControl.mod_257);
+            buffer_write(buffer, buffer_s16, oControl.mod_259);
+            buffer_write(buffer, buffer_s16, oControl.mod_303);
+            buffer_write(buffer, buffer_s16, oControl.mod_304);
+            buffer_write(buffer, buffer_s16, oControl.mod_307);
+            buffer_write(buffer, buffer_s16, oControl.mod_308);
+            buffer_write(buffer, buffer_s16, oControl.mod_309);
+            
+            //Super Missiles
+            buffer_write(buffer, buffer_s16, oControl.mod_51);
+            buffer_write(buffer, buffer_s16, oControl.mod_110);
+            buffer_write(buffer, buffer_s16, oControl.mod_162);
+            buffer_write(buffer, buffer_s16, oControl.mod_206);
+            buffer_write(buffer, buffer_s16, oControl.mod_207);
+            buffer_write(buffer, buffer_s16, oControl.mod_209);
+            buffer_write(buffer, buffer_s16, oControl.mod_215);
+            buffer_write(buffer, buffer_s16, oControl.mod_256);
+            buffer_write(buffer, buffer_s16, oControl.mod_300);
+            buffer_write(buffer, buffer_s16, oControl.mod_305);
+            
+            //Energy Tanks
+            buffer_write(buffer, buffer_s16, oControl.mod_50);
+            buffer_write(buffer, buffer_s16, oControl.mod_103);
+            buffer_write(buffer, buffer_s16, oControl.mod_108);
+            buffer_write(buffer, buffer_s16, oControl.mod_157);
+            buffer_write(buffer, buffer_s16, oControl.mod_158);
+            buffer_write(buffer, buffer_s16, oControl.mod_200);
+            buffer_write(buffer, buffer_s16, oControl.mod_201);
+            buffer_write(buffer, buffer_s16, oControl.mod_251);
+            buffer_write(buffer, buffer_s16, oControl.mod_254);
+            buffer_write(buffer, buffer_s16, oControl.mod_306);
+            
+            //Power Bombs
+            buffer_write(buffer, buffer_s16, oControl.mod_58);
+            buffer_write(buffer, buffer_s16, oControl.mod_59);
+            buffer_write(buffer, buffer_s16, oControl.mod_112);
+            buffer_write(buffer, buffer_s16, oControl.mod_160);
+            buffer_write(buffer, buffer_s16, oControl.mod_212);
+            buffer_write(buffer, buffer_s16, oControl.mod_213);
+            buffer_write(buffer, buffer_s16, oControl.mod_253);
+            buffer_write(buffer, buffer_s16, oControl.mod_258);
+            buffer_write(buffer, buffer_s16, oControl.mod_301);
+            buffer_write(buffer, buffer_s16, oControl.mod_302);
+            
             var bufferSize = buffer_tell(buffer);
             buffer_seek(buffer, buffer_seek_start, 0);
             buffer_write(buffer, buffer_s32, bufferSize);
             buffer_write(buffer, buffer_u8, 4);
             buffer_write(buffer, buffer_f64, global.seed);
             buffer_write(buffer, buffer_u8, 100);
+            
+            //Power-ups
+            buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+            buffer_write(buffer, buffer_s16, oControl.mod_spider);
+            buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+            buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+            buffer_write(buffer, buffer_s16, oControl.mod_varia);
+            buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+            buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+            buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+            buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+            buffer_write(buffer, buffer_s16, oControl.mod_charge);
+            buffer_write(buffer, buffer_s16, oControl.mod_ice);
+            buffer_write(buffer, buffer_s16, oControl.mod_wave);
+            buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+            buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+            
+            //Missiles
+            buffer_write(buffer, buffer_s16, oControl.mod_52);
+            buffer_write(buffer, buffer_s16, oControl.mod_53);
+            buffer_write(buffer, buffer_s16, oControl.mod_54);
+            buffer_write(buffer, buffer_s16, oControl.mod_55);
+            buffer_write(buffer, buffer_s16, oControl.mod_56);
+            buffer_write(buffer, buffer_s16, oControl.mod_57);
+            buffer_write(buffer, buffer_s16, oControl.mod_60);
+            buffer_write(buffer, buffer_s16, oControl.mod_100);
+            buffer_write(buffer, buffer_s16, oControl.mod_101);
+            buffer_write(buffer, buffer_s16, oControl.mod_102);
+            buffer_write(buffer, buffer_s16, oControl.mod_104);
+            buffer_write(buffer, buffer_s16, oControl.mod_105);
+            buffer_write(buffer, buffer_s16, oControl.mod_106);
+            buffer_write(buffer, buffer_s16, oControl.mod_107);
+            buffer_write(buffer, buffer_s16, oControl.mod_109);
+            buffer_write(buffer, buffer_s16, oControl.mod_111);
+            buffer_write(buffer, buffer_s16, oControl.mod_150);
+            buffer_write(buffer, buffer_s16, oControl.mod_151);
+            buffer_write(buffer, buffer_s16, oControl.mod_152);
+            buffer_write(buffer, buffer_s16, oControl.mod_153);
+            buffer_write(buffer, buffer_s16, oControl.mod_154);
+            buffer_write(buffer, buffer_s16, oControl.mod_155);
+            buffer_write(buffer, buffer_s16, oControl.mod_156);
+            buffer_write(buffer, buffer_s16, oControl.mod_159);
+            buffer_write(buffer, buffer_s16, oControl.mod_161);
+            buffer_write(buffer, buffer_s16, oControl.mod_163);
+            buffer_write(buffer, buffer_s16, oControl.mod_202);
+            buffer_write(buffer, buffer_s16, oControl.mod_203);
+            buffer_write(buffer, buffer_s16, oControl.mod_204);
+            buffer_write(buffer, buffer_s16, oControl.mod_205);
+            buffer_write(buffer, buffer_s16, oControl.mod_208);
+            buffer_write(buffer, buffer_s16, oControl.mod_210);
+            buffer_write(buffer, buffer_s16, oControl.mod_211);
+            buffer_write(buffer, buffer_s16, oControl.mod_214);
+            buffer_write(buffer, buffer_s16, oControl.mod_250);
+            buffer_write(buffer, buffer_s16, oControl.mod_252);
+            buffer_write(buffer, buffer_s16, oControl.mod_255);
+            buffer_write(buffer, buffer_s16, oControl.mod_257);
+            buffer_write(buffer, buffer_s16, oControl.mod_259);
+            buffer_write(buffer, buffer_s16, oControl.mod_303);
+            buffer_write(buffer, buffer_s16, oControl.mod_304);
+            buffer_write(buffer, buffer_s16, oControl.mod_307);
+            buffer_write(buffer, buffer_s16, oControl.mod_308);
+            buffer_write(buffer, buffer_s16, oControl.mod_309);
+            
+            //Super Missiles
+            buffer_write(buffer, buffer_s16, oControl.mod_51);
+            buffer_write(buffer, buffer_s16, oControl.mod_110);
+            buffer_write(buffer, buffer_s16, oControl.mod_162);
+            buffer_write(buffer, buffer_s16, oControl.mod_206);
+            buffer_write(buffer, buffer_s16, oControl.mod_207);
+            buffer_write(buffer, buffer_s16, oControl.mod_209);
+            buffer_write(buffer, buffer_s16, oControl.mod_215);
+            buffer_write(buffer, buffer_s16, oControl.mod_256);
+            buffer_write(buffer, buffer_s16, oControl.mod_300);
+            buffer_write(buffer, buffer_s16, oControl.mod_305);
+            
+            //Energy Tanks
+            buffer_write(buffer, buffer_s16, oControl.mod_50);
+            buffer_write(buffer, buffer_s16, oControl.mod_103);
+            buffer_write(buffer, buffer_s16, oControl.mod_108);
+            buffer_write(buffer, buffer_s16, oControl.mod_157);
+            buffer_write(buffer, buffer_s16, oControl.mod_158);
+            buffer_write(buffer, buffer_s16, oControl.mod_200);
+            buffer_write(buffer, buffer_s16, oControl.mod_201);
+            buffer_write(buffer, buffer_s16, oControl.mod_251);
+            buffer_write(buffer, buffer_s16, oControl.mod_254);
+            buffer_write(buffer, buffer_s16, oControl.mod_306);
+            
+            //Power Bombs
+            buffer_write(buffer, buffer_s16, oControl.mod_58);
+            buffer_write(buffer, buffer_s16, oControl.mod_59);
+            buffer_write(buffer, buffer_s16, oControl.mod_112);
+            buffer_write(buffer, buffer_s16, oControl.mod_160);
+            buffer_write(buffer, buffer_s16, oControl.mod_212);
+            buffer_write(buffer, buffer_s16, oControl.mod_213);
+            buffer_write(buffer, buffer_s16, oControl.mod_253);
+            buffer_write(buffer, buffer_s16, oControl.mod_258);
+            buffer_write(buffer, buffer_s16, oControl.mod_301);
+            buffer_write(buffer, buffer_s16, oControl.mod_302);
             network_send_packet(socket, buffer, buffer_tell(buffer));
         }
         alarm[0] = 5;
@@ -1323,12 +1764,209 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, 4);
                 buffer_write(buffer, buffer_f64, seed);
                 buffer_write(buffer, buffer_u8, clientID);
+                
+                //Power-ups
+                buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+                buffer_write(buffer, buffer_s16, oControl.mod_spider);
+                buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+                buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+                buffer_write(buffer, buffer_s16, oControl.mod_varia);
+                buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+                buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+                buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+                buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+                buffer_write(buffer, buffer_s16, oControl.mod_charge);
+                buffer_write(buffer, buffer_s16, oControl.mod_ice);
+                buffer_write(buffer, buffer_s16, oControl.mod_wave);
+                buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+                buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+                
+                //Missiles
+                buffer_write(buffer, buffer_s16, oControl.mod_52);
+                buffer_write(buffer, buffer_s16, oControl.mod_53);
+                buffer_write(buffer, buffer_s16, oControl.mod_54);
+                buffer_write(buffer, buffer_s16, oControl.mod_55);
+                buffer_write(buffer, buffer_s16, oControl.mod_56);
+                buffer_write(buffer, buffer_s16, oControl.mod_57);
+                buffer_write(buffer, buffer_s16, oControl.mod_60);
+                buffer_write(buffer, buffer_s16, oControl.mod_100);
+                buffer_write(buffer, buffer_s16, oControl.mod_101);
+                buffer_write(buffer, buffer_s16, oControl.mod_102);
+                buffer_write(buffer, buffer_s16, oControl.mod_104);
+                buffer_write(buffer, buffer_s16, oControl.mod_105);
+                buffer_write(buffer, buffer_s16, oControl.mod_106);
+                buffer_write(buffer, buffer_s16, oControl.mod_107);
+                buffer_write(buffer, buffer_s16, oControl.mod_109);
+                buffer_write(buffer, buffer_s16, oControl.mod_111);
+                buffer_write(buffer, buffer_s16, oControl.mod_150);
+                buffer_write(buffer, buffer_s16, oControl.mod_151);
+                buffer_write(buffer, buffer_s16, oControl.mod_152);
+                buffer_write(buffer, buffer_s16, oControl.mod_153);
+                buffer_write(buffer, buffer_s16, oControl.mod_154);
+                buffer_write(buffer, buffer_s16, oControl.mod_155);
+                buffer_write(buffer, buffer_s16, oControl.mod_156);
+                buffer_write(buffer, buffer_s16, oControl.mod_159);
+                buffer_write(buffer, buffer_s16, oControl.mod_161);
+                buffer_write(buffer, buffer_s16, oControl.mod_163);
+                buffer_write(buffer, buffer_s16, oControl.mod_202);
+                buffer_write(buffer, buffer_s16, oControl.mod_203);
+                buffer_write(buffer, buffer_s16, oControl.mod_204);
+                buffer_write(buffer, buffer_s16, oControl.mod_205);
+                buffer_write(buffer, buffer_s16, oControl.mod_208);
+                buffer_write(buffer, buffer_s16, oControl.mod_210);
+                buffer_write(buffer, buffer_s16, oControl.mod_211);
+                buffer_write(buffer, buffer_s16, oControl.mod_214);
+                buffer_write(buffer, buffer_s16, oControl.mod_250);
+                buffer_write(buffer, buffer_s16, oControl.mod_252);
+                buffer_write(buffer, buffer_s16, oControl.mod_255);
+                buffer_write(buffer, buffer_s16, oControl.mod_257);
+                buffer_write(buffer, buffer_s16, oControl.mod_259);
+                buffer_write(buffer, buffer_s16, oControl.mod_303);
+                buffer_write(buffer, buffer_s16, oControl.mod_304);
+                buffer_write(buffer, buffer_s16, oControl.mod_307);
+                buffer_write(buffer, buffer_s16, oControl.mod_308);
+                buffer_write(buffer, buffer_s16, oControl.mod_309);
+                
+                //Super Missiles
+                buffer_write(buffer, buffer_s16, oControl.mod_51);
+                buffer_write(buffer, buffer_s16, oControl.mod_110);
+                buffer_write(buffer, buffer_s16, oControl.mod_162);
+                buffer_write(buffer, buffer_s16, oControl.mod_206);
+                buffer_write(buffer, buffer_s16, oControl.mod_207);
+                buffer_write(buffer, buffer_s16, oControl.mod_209);
+                buffer_write(buffer, buffer_s16, oControl.mod_215);
+                buffer_write(buffer, buffer_s16, oControl.mod_256);
+                buffer_write(buffer, buffer_s16, oControl.mod_300);
+                buffer_write(buffer, buffer_s16, oControl.mod_305);
+                
+                //Energy Tanks
+                buffer_write(buffer, buffer_s16, oControl.mod_50);
+                buffer_write(buffer, buffer_s16, oControl.mod_103);
+                buffer_write(buffer, buffer_s16, oControl.mod_108);
+                buffer_write(buffer, buffer_s16, oControl.mod_157);
+                buffer_write(buffer, buffer_s16, oControl.mod_158);
+                buffer_write(buffer, buffer_s16, oControl.mod_200);
+                buffer_write(buffer, buffer_s16, oControl.mod_201);
+                buffer_write(buffer, buffer_s16, oControl.mod_251);
+                buffer_write(buffer, buffer_s16, oControl.mod_254);
+                buffer_write(buffer, buffer_s16, oControl.mod_306);
+                
+                //Power Bombs
+                buffer_write(buffer, buffer_s16, oControl.mod_58);
+                buffer_write(buffer, buffer_s16, oControl.mod_59);
+                buffer_write(buffer, buffer_s16, oControl.mod_112);
+                buffer_write(buffer, buffer_s16, oControl.mod_160);
+                buffer_write(buffer, buffer_s16, oControl.mod_212);
+                buffer_write(buffer, buffer_s16, oControl.mod_213);
+                buffer_write(buffer, buffer_s16, oControl.mod_253);
+                buffer_write(buffer, buffer_s16, oControl.mod_258);
+                buffer_write(buffer, buffer_s16, oControl.mod_301);
+                buffer_write(buffer, buffer_s16, oControl.mod_302);
+                
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
                 buffer_write(buffer, buffer_u8, 4);
                 buffer_write(buffer, buffer_f64, seed);
                 buffer_write(buffer, buffer_u8, clientID);
+                
+                //Power-ups
+                buffer_write(buffer, buffer_s16, oControl.mod_bombs);
+                buffer_write(buffer, buffer_s16, oControl.mod_spider);
+                buffer_write(buffer, buffer_s16, oControl.mod_jumpball);
+                buffer_write(buffer, buffer_s16, oControl.mod_hijump);
+                buffer_write(buffer, buffer_s16, oControl.mod_varia);
+                buffer_write(buffer, buffer_s16, oControl.mod_spacejump);
+                buffer_write(buffer, buffer_s16, oControl.mod_speedbooster);
+                buffer_write(buffer, buffer_s16, oControl.mod_screwattack);
+                buffer_write(buffer, buffer_s16, oControl.mod_gravity);
+                buffer_write(buffer, buffer_s16, oControl.mod_charge);
+                buffer_write(buffer, buffer_s16, oControl.mod_ice);
+                buffer_write(buffer, buffer_s16, oControl.mod_wave);
+                buffer_write(buffer, buffer_s16, oControl.mod_spazer);
+                buffer_write(buffer, buffer_s16, oControl.mod_plasma);
+                
+                //Missiles
+                buffer_write(buffer, buffer_s16, oControl.mod_52);
+                buffer_write(buffer, buffer_s16, oControl.mod_53);
+                buffer_write(buffer, buffer_s16, oControl.mod_54);
+                buffer_write(buffer, buffer_s16, oControl.mod_55);
+                buffer_write(buffer, buffer_s16, oControl.mod_56);
+                buffer_write(buffer, buffer_s16, oControl.mod_57);
+                buffer_write(buffer, buffer_s16, oControl.mod_60);
+                buffer_write(buffer, buffer_s16, oControl.mod_100);
+                buffer_write(buffer, buffer_s16, oControl.mod_101);
+                buffer_write(buffer, buffer_s16, oControl.mod_102);
+                buffer_write(buffer, buffer_s16, oControl.mod_104);
+                buffer_write(buffer, buffer_s16, oControl.mod_105);
+                buffer_write(buffer, buffer_s16, oControl.mod_106);
+                buffer_write(buffer, buffer_s16, oControl.mod_107);
+                buffer_write(buffer, buffer_s16, oControl.mod_109);
+                buffer_write(buffer, buffer_s16, oControl.mod_111);
+                buffer_write(buffer, buffer_s16, oControl.mod_150);
+                buffer_write(buffer, buffer_s16, oControl.mod_151);
+                buffer_write(buffer, buffer_s16, oControl.mod_152);
+                buffer_write(buffer, buffer_s16, oControl.mod_153);
+                buffer_write(buffer, buffer_s16, oControl.mod_154);
+                buffer_write(buffer, buffer_s16, oControl.mod_155);
+                buffer_write(buffer, buffer_s16, oControl.mod_156);
+                buffer_write(buffer, buffer_s16, oControl.mod_159);
+                buffer_write(buffer, buffer_s16, oControl.mod_161);
+                buffer_write(buffer, buffer_s16, oControl.mod_163);
+                buffer_write(buffer, buffer_s16, oControl.mod_202);
+                buffer_write(buffer, buffer_s16, oControl.mod_203);
+                buffer_write(buffer, buffer_s16, oControl.mod_204);
+                buffer_write(buffer, buffer_s16, oControl.mod_205);
+                buffer_write(buffer, buffer_s16, oControl.mod_208);
+                buffer_write(buffer, buffer_s16, oControl.mod_210);
+                buffer_write(buffer, buffer_s16, oControl.mod_211);
+                buffer_write(buffer, buffer_s16, oControl.mod_214);
+                buffer_write(buffer, buffer_s16, oControl.mod_250);
+                buffer_write(buffer, buffer_s16, oControl.mod_252);
+                buffer_write(buffer, buffer_s16, oControl.mod_255);
+                buffer_write(buffer, buffer_s16, oControl.mod_257);
+                buffer_write(buffer, buffer_s16, oControl.mod_259);
+                buffer_write(buffer, buffer_s16, oControl.mod_303);
+                buffer_write(buffer, buffer_s16, oControl.mod_304);
+                buffer_write(buffer, buffer_s16, oControl.mod_307);
+                buffer_write(buffer, buffer_s16, oControl.mod_308);
+                buffer_write(buffer, buffer_s16, oControl.mod_309);
+                
+                //Super Missiles
+                buffer_write(buffer, buffer_s16, oControl.mod_51);
+                buffer_write(buffer, buffer_s16, oControl.mod_110);
+                buffer_write(buffer, buffer_s16, oControl.mod_162);
+                buffer_write(buffer, buffer_s16, oControl.mod_206);
+                buffer_write(buffer, buffer_s16, oControl.mod_207);
+                buffer_write(buffer, buffer_s16, oControl.mod_209);
+                buffer_write(buffer, buffer_s16, oControl.mod_215);
+                buffer_write(buffer, buffer_s16, oControl.mod_256);
+                buffer_write(buffer, buffer_s16, oControl.mod_300);
+                buffer_write(buffer, buffer_s16, oControl.mod_305);
+                
+                //Energy Tanks
+                buffer_write(buffer, buffer_s16, oControl.mod_50);
+                buffer_write(buffer, buffer_s16, oControl.mod_103);
+                buffer_write(buffer, buffer_s16, oControl.mod_108);
+                buffer_write(buffer, buffer_s16, oControl.mod_157);
+                buffer_write(buffer, buffer_s16, oControl.mod_158);
+                buffer_write(buffer, buffer_s16, oControl.mod_200);
+                buffer_write(buffer, buffer_s16, oControl.mod_201);
+                buffer_write(buffer, buffer_s16, oControl.mod_251);
+                buffer_write(buffer, buffer_s16, oControl.mod_254);
+                buffer_write(buffer, buffer_s16, oControl.mod_306);
+                
+                //Power Bombs
+                buffer_write(buffer, buffer_s16, oControl.mod_58);
+                buffer_write(buffer, buffer_s16, oControl.mod_59);
+                buffer_write(buffer, buffer_s16, oControl.mod_112);
+                buffer_write(buffer, buffer_s16, oControl.mod_160);
+                buffer_write(buffer, buffer_s16, oControl.mod_212);
+                buffer_write(buffer, buffer_s16, oControl.mod_213);
+                buffer_write(buffer, buffer_s16, oControl.mod_253);
+                buffer_write(buffer, buffer_s16, oControl.mod_258);
+                buffer_write(buffer, buffer_s16, oControl.mod_301);
+                buffer_write(buffer, buffer_s16, oControl.mod_302);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }

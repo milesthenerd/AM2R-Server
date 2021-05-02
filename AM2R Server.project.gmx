@@ -55,6 +55,9 @@
     <sprite>sprites\sDifficulty</sprite>
     <sprite>sprites\sELM</sprite>
     <sprite>sprites\sBlacklistReset</sprite>
+    <sprite>sprites\sGenerateSeed</sprite>
+    <sprite>sprites\sCycleRando</sprite>
+    <sprite>sprites\sCustomSeed</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -68,6 +71,111 @@
     <script>scripts\array_clone.gml</script>
     <script>scripts\check_items.gml</script>
     <script>scripts\draw_cool_text.gml</script>
+    <scripts name="Randomizers">
+      <script>scripts\scr_randomizer_pure.gml</script>
+      <script>scripts\scr_missile_create.gml</script>
+      <script>scripts\scr_supermissile_create.gml</script>
+      <script>scripts\scr_energytank_create.gml</script>
+      <script>scripts\scr_powerbomb_create.gml</script>
+      <script>scripts\scr_item_create_text.gml</script>
+      <script>scripts\scr_item_character_event.gml</script>
+      <script>scripts\scr_missile_character_event.gml</script>
+      <script>scripts\scr_supermissile_character_event.gml</script>
+      <script>scripts\scr_energytank_character_event.gml</script>
+      <script>scripts\scr_powerbomb_character_event.gml</script>
+      <script>scripts\src_items_rando.gml</script>
+      <script>scripts\draw_gui2.gml</script>
+      <script>scripts\gui_health2.gml</script>
+      <script>scripts\hd_change.gml</script>
+      <script>scripts\hdM_change.gml</script>
+      <script>scripts\scr_randomizer.gml</script>
+      <script>scripts\mod_changes_2.gml</script>
+      <script>scripts\scr_itemchange.gml</script>
+      <script>scripts\scr_newgame.gml</script>
+      <script>scripts\scr_itemsopen.gml</script>
+      <script>scripts\scr_fixitem.gml</script>
+      <script>scripts\scr_load_mods.gml</script>
+      <script>scripts\mod_changes.gml</script>
+      <script>scripts\mod_wat_scr.gml</script>
+      <script>scripts\scr_randomizer_encrypted.gml</script>
+      <script>scripts\scr_randomizer_read.gml</script>
+      <script>scripts\scr_variasuitswap.gml</script>
+      <script>scripts\spawn_many_powerups_tank.gml</script>
+      <script>scripts\scr_disableplayercontrol.gml</script>
+      <script>scripts\scr_rand_encrypt_read.gml</script>
+      <script>scripts\scr_rand_encrypt_write.gml</script>
+      <script>scripts\scr_fixitem_encrypted.gml</script>
+      <script>scripts\scr_fixitem_switch.gml</script>
+      <script>scripts\scr_default_global_items.gml</script>
+      <script>scripts\scr_ini_write.gml</script>
+      <script>scripts\scr_skreeks_destroy.gml</script>
+      <script>scripts\scr_itemsmenu_original.gml</script>
+      <script>scripts\scr_itemsmenu_swap.gml</script>
+      <script>scripts\scr_default_maprandom.gml</script>
+      <script>scripts\sv6_randomizer.gml</script>
+      <script>scripts\sv6_get_random.gml</script>
+      <script>scripts\scr_swappables.gml</script>
+      <script>scripts\scr_speedbooster_wall.gml</script>
+      <script>scripts\scr_randomizer_junk.gml</script>
+      <script>scripts\scr_randomizer_bombs.gml</script>
+      <script>scripts\scr_randomizer_powerbombs.gml</script>
+      <script>scripts\scr_randomizer_screwattack.gml</script>
+      <script>scripts\scr_randomizer_items.gml</script>
+      <script>scripts\scr_randomizer_pure_new.gml</script>
+      <script>scripts\scr_logic_SB_wall.gml</script>
+      <script>scripts\scr_randomizer_pure_wall.gml</script>
+      <script>scripts\scr_randomizer_pure_vars.gml</script>
+      <script>scripts\scr_randomizer_pure_area2.gml</script>
+      <script>scripts\scr_rand_split_powerups.gml</script>
+      <script>scripts\scr_randomizer_split_items.gml</script>
+      <script>scripts\scr_logic_misc.gml</script>
+      <script>scripts\scr_logic_bomb_shuffle.gml</script>
+      <script>scripts\scr_logic_PB_shuffle.gml</script>
+      <script>scripts\scr_logic_SB_shuffle.gml</script>
+      <script>scripts\scr_logic_SJ_shuffle.gml</script>
+      <script>scripts\scr_PUorET.gml</script>
+      <script>scripts\scr_PU.gml</script>
+      <script>scripts\scr_random_draw_pool.gml</script>
+      <script>scripts\scr_random_draw_gravity.gml</script>
+      <script>scripts\scr_random_draw_screw.gml</script>
+      <script>scripts\scr_random_draw_gravity_spider.gml</script>
+      <script>scripts\scr_random_draw_spider_spring_space_112.gml</script>
+      <script>scripts\scr_random_draw_spider_spring_space_111.gml</script>
+      <script>scripts\scr_random_draw_spider.gml</script>
+      <script>scripts\scr_random_draw_111.gml</script>
+      <script>scripts\scr_random_draw_112.gml</script>
+      <script>scripts\scr_load_items.gml</script>
+      <script>scripts\scr_load_undefined.gml</script>
+      <script>scripts\scr_controller_xbox.gml</script>
+      <script>scripts\scr_controller_ps.gml</script>
+      <script>scripts\scr_controller_N.gml</script>
+      <script>scripts\scr_suit_sprites.gml</script>
+      <script>scripts\scr_SubScrTop_swap.gml</script>
+      <script>scripts\scr_SubScrTop_swap2.gml</script>
+      <script>scripts\scr_septoggs_02467.gml</script>
+      <script>scripts\scr_septoggs_2467.gml</script>
+      <script>scripts\scr_septoggs_246.gml</script>
+      <script>scripts\scr_septoggs_2468.gml</script>
+      <script>scripts\scr_septoggs_48.gml</script>
+      <script>scripts\scr_septoggs_67.gml</script>
+      <script>scripts\scr_septoggs_46.gml</script>
+      <script>scripts\scr_septoggs_26.gml</script>
+      <script>scripts\scr_septoggs_267.gml</script>
+      <script>scripts\data_sav_extras.gml</script>
+      <script>scripts\data_load_extras.gml</script>
+      <script>scripts\mus_change_itemroom.gml</script>
+      <script>scripts\save_stats2.gml</script>
+      <script>scripts\load_stats2.gml</script>
+      <script>scripts\scr_shader_control.gml</script>
+      <script>scripts\crypt.gml</script>
+      <script>scripts\get_text.gml</script>
+      <script>scripts\popup_text.gml</script>
+      <script>scripts\rc4.gml</script>
+      <script>scripts\readline.gml</script>
+      <script>scripts\sfx_stop.gml</script>
+      <script>scripts\string_split.gml</script>
+    </scripts>
+    <script>scripts\add_randomod_buffer.gml</script>
   </scripts>
   <fonts name="fonts">
     <font>fonts\font0</font>
@@ -96,6 +204,10 @@
     <object>objects\oDifficulty</object>
     <object>objects\oELM</object>
     <object>objects\oBlacklistReset</object>
+    <object>objects\oControl</object>
+    <object>objects\oGenerateSeed</object>
+    <object>objects\oCycleRando</object>
+    <object>objects\oCustomSeed</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>
