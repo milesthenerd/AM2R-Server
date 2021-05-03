@@ -1,3 +1,4 @@
+/*
 if (global.item[10]) {
     draw_sprite(sSubScrButton, global.cbeam, x - 28, y - 46);
     draw_text(x - 20, y - 47 + oControl.subScrItemOffset, cbeam);

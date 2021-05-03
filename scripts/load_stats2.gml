@@ -1,4 +1,5 @@
 /// load_stats()
+/*
 var header;
 filename = "extras.sav";
 if (os_is_native) {

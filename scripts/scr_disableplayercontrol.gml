@@ -1,3 +1,4 @@
+/*
 global.enablecontrol = 0;
 with (oCharacter) {
     kLeft = 0;

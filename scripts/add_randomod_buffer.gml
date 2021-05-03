@@ -1,5 +1,5 @@
 /// add_randomod_buffer
-
+/*
 var size, type, alignment;
 size = 1024;
 type = buffer_grow;
@@ -214,3 +214,4 @@ buffer_write(buffer, buffer_s16, oControl.mod_301);
 buffer_write(buffer, buffer_s16, oControl.mod_302);
 
 show_debug_message("added");
+*/

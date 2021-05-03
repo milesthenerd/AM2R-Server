@@ -129,7 +129,25 @@ syncedELM = 0;
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>network_destroy(server);
+            <string>buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 107);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 107);
+
+var sockets = ds_list_size(playerList);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
+network_destroy(server);
 network_destroy(webpanel);
 if(buffer_exists(buffer)){
     buffer_delete(buffer);
@@ -2955,7 +2973,25 @@ for(var i=0; i&lt;sockets; i++){
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>network_destroy(server);
+            <string>buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 107);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 107);
+
+var sockets = ds_list_size(playerList);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
+network_destroy(server);
 network_destroy(webpanel);
 if(buffer_exists(buffer)){
     buffer_delete(buffer);

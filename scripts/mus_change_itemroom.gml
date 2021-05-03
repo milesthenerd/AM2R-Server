@@ -1,3 +1,4 @@
+/*
 if (file_exists("musItemAmb2.ogg")) {
     audio_sound_gain(oMusicV2.currentbgm, 0, 250);
     oMusicV2.alarm[8] = 15;

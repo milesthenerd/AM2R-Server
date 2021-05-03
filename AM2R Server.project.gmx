@@ -206,8 +206,8 @@
     <object>objects\oBlacklistReset</object>
     <object>objects\oControl</object>
     <object>objects\oGenerateSeed</object>
-    <object>objects\oCycleRando</object>
     <object>objects\oCustomSeed</object>
+    <object>objects\oCycleRando</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

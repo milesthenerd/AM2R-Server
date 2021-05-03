@@ -1,4 +1,5 @@
 /// save_stats()
+/*
 var filename, fid;
 save_str[0] = data_sav_extras();
 filename = "extras.sav";
