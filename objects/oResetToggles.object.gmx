@@ -32,6 +32,7 @@ global.itemToggleSync = true;
 global.metroidSync = true;
 global.eventSync = true;
 global.mapSync = true;
+global.mapPlayerIconSync = true;
 
 </string>
           </argument>

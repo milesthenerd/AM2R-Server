@@ -43,6 +43,8 @@ oItemIBeam = undefined;
 oItemWBeam = undefined;
 oItemSBeam = undefined;
 oItemPBeam = undefined;
+
+global.readyMap = ds_map_create();
 </string>
           </argument>
         </arguments>

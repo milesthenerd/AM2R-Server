@@ -52,6 +52,8 @@ image_speed = 0;
             <string>if(global.healthSync){
     image_index = 0;
 } else image_index = 1;
+
+if(global.saxmode) global.healthSync = false;
 </string>
           </argument>
         </arguments>
@@ -74,7 +76,7 @@ image_speed = 0;
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>global.healthSync = !global.healthSync;
+            <string>if(!global.saxmode) global.healthSync = !global.healthSync;
 </string>
           </argument>
         </arguments>

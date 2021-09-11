@@ -52,6 +52,8 @@ image_speed = 0;
             <string>if(global.itemSync){
     image_index = 0;
 } else image_index = 1;
+
+if(global.saxmode) global.itemSync = true;
 </string>
           </argument>
         </arguments>
@@ -74,7 +76,7 @@ image_speed = 0;
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>global.itemSync = !global.itemSync;
+            <string>if(!global.saxmode) global.itemSync = !global.itemSync;
 </string>
           </argument>
         </arguments>

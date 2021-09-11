@@ -58,6 +58,10 @@
     <sprite>sprites\sGenerateSeed</sprite>
     <sprite>sprites\sCycleRando</sprite>
     <sprite>sprites\sCustomSeed</sprite>
+    <sprite>sprites\sSAXMode</sprite>
+    <sprite>sprites\sSAXModeToggle</sprite>
+    <sprite>sprites\sLockLobby</sprite>
+    <sprite>sprites\sModPassword</sprite>
   </sprites>
   <backgrounds name="background"/>
   <paths name="paths"/>
@@ -208,6 +212,11 @@
     <object>objects\oGenerateSeed</object>
     <object>objects\oCustomSeed</object>
     <object>objects\oCycleRando</object>
+    <object>objects\oSAXMode</object>
+    <object>objects\oSAXModeButton</object>
+    <object>objects\oSAXModeToggle</object>
+    <object>objects\oLockLobby</object>
+    <object>objects\oModPassword</object>
   </objects>
   <rooms name="rooms">
     <room>rooms\room0</room>

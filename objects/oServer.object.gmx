@@ -36,11 +36,13 @@ if(!file_exists(working_directory + "\settings.ini")){
     ini_open(working_directory + "\settings.ini");
     ini_write_real("Settings", "port", 64198);
     ini_write_real("Settings", "maxplayers", 16);
+    ini_write_string("Settings", "moderatorpass", string(random_get_seed()));
     ini_close();
 }
 ini_open(working_directory + "\settings.ini");
 port = ini_read_real("Settings", "port", 64198);
 maxClients = ini_read_real("Settings", "maxplayers", 16);
+password = ini_read_string("Settings", "moderatorpass", string(random_get_seed()));
 ini_close();
 
 if(!file_exists(working_directory + "\blacklist.txt")){
@@ -75,9 +77,13 @@ playerList = ds_list_create();
 idList = ds_list_create();
 timeList = ds_list_create();
 resetList = ds_list_create();
+samusList = ds_list_create();
+saxList = ds_list_create();
+deadList = ds_list_create();
 
 vars = ds_grid_create(3, 20);
 map = ds_map_create();
+posMap = ds_map_create();
 
 var import = json_import("item_dict.json");
 dict = json_decode(import);
@@ -96,6 +102,7 @@ alarm[4] = 420;
 alarm[5] = 3600;
 alarm[9] = 60;
 alarm[10] = 600;
+alarm[11] = 60;
 
 reset_globals();
 
@@ -107,6 +114,9 @@ global.saveString = "\save" + slotStr + ".txt";
 
 syncedDifficulty = 1;
 syncedELM = 0;
+posMapModified = false;
+
+global.lobbyLocked = false;
 </string>
           </argument>
         </arguments>
@@ -159,8 +169,60 @@ ds_list_destroy(timeList);
 ds_list_destroy(resetList);
 ds_list_destroy(banList);
 ds_list_destroy(kickList);
+ds_list_destroy(samusList);
+ds_list_destroy(saxList);
+ds_list_destroy(deadList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
+ds_map_destroy(posMap);
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="2" enumb="11">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>var samCount = ds_list_size(samusList) - ds_list_size(deadList);
+if(global.event[308] &gt; 0) samCount = 0;
+var sockets = ds_list_size(playerList);
+buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 113);
+buffer_write(buffer, buffer_u8, global.saxmode);
+buffer_write(buffer, buffer_u8, global.lobbyLocked);
+buffer_write(buffer, buffer_u8, samCount);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 113);
+buffer_write(buffer, buffer_u8, global.saxmode);
+buffer_write(buffer, buffer_u8, global.lobbyLocked);
+buffer_write(buffer, buffer_u8, samCount);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
+alarm[11] = 30;
 </string>
           </argument>
         </arguments>
@@ -455,38 +517,82 @@ size = 1024;
 type = buffer_grow;
 alignment = 1;
 dmapBuffer = buffer_create(size, type, alignment);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_u8, 53);
 
-buffer_write(dmapBuffer, buffer_u8, 4);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 60 &amp;&amp; i &lt; 80){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
+    var sockets = ds_list_size(playerList);
+    for(var v=0; v&lt;sockets; v++){
+        for(var f=0; f&lt;ds_list_size(idList); f++){
+            var arr = idList[| f];
+            var arrID = arr[0, 0];
+            var arrSocket = arr[0, 1];
+            if(arrSocket == playerList[| v]){
+                var findID = ds_list_find_index(samusList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 4);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 60 &amp;&amp; i &lt; 80){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 4);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 60 &amp;&amp; i &lt; 80){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            
+                var findID = ds_list_find_index(saxList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 4);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 60 &amp;&amp; i &lt; 80){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 4);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 60 &amp;&amp; i &lt; 80){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            }
         }
     }
-}
-
-var bufferSize = buffer_tell(dmapBuffer);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_s32, bufferSize);
-buffer_write(dmapBuffer, buffer_u8, 53);
-
-buffer_write(dmapBuffer, buffer_u8, 4);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 60 &amp;&amp; i &lt; 80){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
-        }
-    }
-}
-
-var sockets = ds_list_size(playerList);
-for(var i=0; i&lt;sockets; i++){
-    network_send_packet(playerList[| i], dmapBuffer, buffer_tell(dmapBuffer));
-}
 
 buffer_delete(dmapBuffer);
 alarm[5] = 3600;
@@ -517,38 +623,82 @@ size = 1024;
 type = buffer_grow;
 alignment = 1;
 dmapBuffer = buffer_create(size, type, alignment);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_u8, 53);
 
-buffer_write(dmapBuffer, buffer_u8, 3);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 40 &amp;&amp; i &lt; 60){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
+    var sockets = ds_list_size(playerList);
+    for(var v=0; v&lt;sockets; v++){
+        for(var f=0; f&lt;ds_list_size(idList); f++){
+            var arr = idList[| f];
+            var arrID = arr[0, 0];
+            var arrSocket = arr[0, 1];
+            if(arrSocket == playerList[| v]){
+                var findID = ds_list_find_index(samusList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 3);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 40 &amp;&amp; i &lt; 60){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 3);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 40 &amp;&amp; i &lt; 60){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            
+                var findID = ds_list_find_index(saxList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 3);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 40 &amp;&amp; i &lt; 60){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 3);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 40 &amp;&amp; i &lt; 60){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            }
         }
     }
-}
-
-var bufferSize = buffer_tell(dmapBuffer);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_s32, bufferSize);
-buffer_write(dmapBuffer, buffer_u8, 53);
-
-buffer_write(dmapBuffer, buffer_u8, 3);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 40 &amp;&amp; i &lt; 60){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
-        }
-    }
-}
-
-var sockets = ds_list_size(playerList);
-for(var i=0; i&lt;sockets; i++){
-    network_send_packet(playerList[| i], dmapBuffer, buffer_tell(dmapBuffer));
-}
 
 buffer_delete(dmapBuffer);
 alarm[8] = 120;
@@ -579,38 +729,82 @@ size = 1024;
 type = buffer_grow;
 alignment = 1;
 dmapBuffer = buffer_create(size, type, alignment);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_u8, 53);
 
-buffer_write(dmapBuffer, buffer_u8, 2);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 20 &amp;&amp; i &lt; 40){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
+    var sockets = ds_list_size(playerList);
+    for(var v=0; v&lt;sockets; v++){
+        for(var f=0; f&lt;ds_list_size(idList); f++){
+            var arr = idList[| f];
+            var arrID = arr[0, 0];
+            var arrSocket = arr[0, 1];
+            if(arrSocket == playerList[| v]){
+                var findID = ds_list_find_index(samusList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 2);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 20 &amp;&amp; i &lt; 40){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 2);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &gt;= 20 &amp;&amp; i &lt; 40){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            
+                var findID = ds_list_find_index(saxList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 2);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 20 &amp;&amp; i &lt; 40){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    
+                    buffer_write(dmapBuffer, buffer_u8, 2);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &gt;= 20 &amp;&amp; i &lt; 40){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            }
         }
     }
-}
-
-var bufferSize = buffer_tell(dmapBuffer);
-buffer_seek(dmapBuffer, buffer_seek_start, 0);
-buffer_write(dmapBuffer, buffer_s32, bufferSize);
-buffer_write(dmapBuffer, buffer_u8, 53);
-
-buffer_write(dmapBuffer, buffer_u8, 2);
-
-for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-        if(i &gt;= 20 &amp;&amp; i &lt; 40){
-            buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
-        }
-    }
-}
-
-var sockets = ds_list_size(playerList);
-for(var i=0; i&lt;sockets; i++){
-    network_send_packet(playerList[| i], dmapBuffer, buffer_tell(dmapBuffer));
-}
 
 buffer_delete(dmapBuffer);
 alarm[7] = 120;
@@ -642,35 +836,77 @@ alarm[7] = 120;
     type = buffer_grow;
     alignment = 1;
     dmapBuffer = buffer_create(size, type, alignment);
-    buffer_seek(dmapBuffer, buffer_seek_start, 0);
-    buffer_write(dmapBuffer, buffer_u8, 53);
-    buffer_write(dmapBuffer, buffer_u8, 1);
-    
-    for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-        for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-            if(i &lt; 20){
-                buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
-            }
-        }
-    }
-    
-    var bufferSize = buffer_tell(dmapBuffer);
-    buffer_seek(dmapBuffer, buffer_seek_start, 0);
-    buffer_write(dmapBuffer, buffer_s32, bufferSize);
-    buffer_write(dmapBuffer, buffer_u8, 53);
-    buffer_write(dmapBuffer, buffer_u8, 1);
-    
-    for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-        for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-            if(i &lt; 20){
-                buffer_write(dmapBuffer, buffer_u8, global.dmap[i, j]);
-            }
-        }
-    }
     
     var sockets = ds_list_size(playerList);
-    for(var i=0; i&lt;sockets; i++){
-        network_send_packet(playerList[| i], dmapBuffer, buffer_tell(dmapBuffer));
+    for(var v=0; v&lt;sockets; v++){
+        for(var f=0; f&lt;ds_list_size(idList); f++){
+            var arr = idList[| f];
+            var arrID = arr[0, 0];
+            var arrSocket = arr[0, 1];
+            if(arrSocket == playerList[| v]){
+                var findID = ds_list_find_index(samusList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    buffer_write(dmapBuffer, buffer_u8, 1);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &lt; 20){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    buffer_write(dmapBuffer, buffer_u8, 1);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                            if(i &lt; 20){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSamus[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            
+                var findID = ds_list_find_index(saxList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    buffer_write(dmapBuffer, buffer_u8, 1);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &lt; 20){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    var bufferSize = buffer_tell(dmapBuffer);
+                    buffer_seek(dmapBuffer, buffer_seek_start, 0);
+                    buffer_write(dmapBuffer, buffer_s32, bufferSize);
+                    buffer_write(dmapBuffer, buffer_u8, 53);
+                    buffer_write(dmapBuffer, buffer_u8, 1);
+                    
+                    for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                        for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                            if(i &lt; 20){
+                                buffer_write(dmapBuffer, buffer_u8, global.dmapSAX[i, j]);
+                            }
+                        }
+                    }
+                    
+                    network_send_packet(playerList[| v], dmapBuffer, buffer_tell(dmapBuffer));
+                }
+            }
+        }
     }
     
     buffer_delete(dmapBuffer);
@@ -804,22 +1040,51 @@ alarm[7] = 120;
     type = buffer_grow;
     alignment = 1;
     itemBuffer = buffer_create(size, type, alignment);
-    buffer_seek(itemBuffer, buffer_seek_start, 0);
-    buffer_write(itemBuffer, buffer_u8, 50);
-    for(var i=0; i&lt;array_length_1d(global.item); i++){
-        buffer_write(itemBuffer, buffer_u8, global.item[i]);
-    }
-    var bufferSize = buffer_tell(itemBuffer);
-    buffer_seek(itemBuffer, buffer_seek_start, 0);
-    buffer_write(itemBuffer, buffer_s32, bufferSize);
-    buffer_write(itemBuffer, buffer_u8, 50);
-    for(var i=0; i&lt;array_length_1d(global.item); i++){
-        buffer_write(itemBuffer, buffer_u8, global.item[i]);
-    }
     
     var sockets = ds_list_size(playerList);
     for(var i=0; i&lt;sockets; i++){
-        network_send_packet(playerList[| i], itemBuffer, buffer_tell(itemBuffer));
+        for(var f=0; f&lt;ds_list_size(idList); f++){
+            var arr = idList[| f];
+            var arrID = arr[0, 0];
+            var arrSocket = arr[0, 1];
+            if(arrSocket == playerList[| i]){
+                var findID = ds_list_find_index(samusList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(itemBuffer, buffer_seek_start, 0);
+                    buffer_write(itemBuffer, buffer_u8, 50);
+                    for(var v=0; v&lt;array_length_1d(global.itemSamus); v++){
+                        buffer_write(itemBuffer, buffer_u8, global.itemSamus[v]);
+                    }
+                    var bufferSize = buffer_tell(itemBuffer);
+                    buffer_seek(itemBuffer, buffer_seek_start, 0);
+                    buffer_write(itemBuffer, buffer_s32, bufferSize);
+                    buffer_write(itemBuffer, buffer_u8, 50);
+                    for(var v=0; v&lt;array_length_1d(global.itemSamus); v++){
+                        buffer_write(itemBuffer, buffer_u8, global.itemSamus[v]);
+                    }
+                    
+                    network_send_packet(playerList[| i], itemBuffer, buffer_tell(itemBuffer));
+                }
+            
+                var findID = ds_list_find_index(saxList, arrID);
+                if(findID &gt;= 0){
+                    buffer_seek(itemBuffer, buffer_seek_start, 0);
+                    buffer_write(itemBuffer, buffer_u8, 50);
+                    for(var v=0; v&lt;array_length_1d(global.itemSAX); v++){
+                        buffer_write(itemBuffer, buffer_u8, global.itemSAX[v]);
+                    }
+                    var bufferSize = buffer_tell(itemBuffer);
+                    buffer_seek(itemBuffer, buffer_seek_start, 0);
+                    buffer_write(itemBuffer, buffer_s32, bufferSize);
+                    buffer_write(itemBuffer, buffer_u8, 50);
+                    for(var v=0; v&lt;array_length_1d(global.itemSAX); v++){
+                        buffer_write(itemBuffer, buffer_u8, global.itemSAX[v]);
+                    }
+                    
+                    network_send_packet(playerList[| i], itemBuffer, buffer_tell(itemBuffer));
+                }
+            }
+        }
     }
     
     buffer_delete(itemBuffer);
@@ -923,6 +1188,46 @@ buffer_write(buffer, buffer_u8, syncedELM);
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
+
+var getGravity = false;
+if(global.itemSamus[5] &amp;&amp; global.itemSamus[9]) getGravity = true;
+
+buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 115);
+buffer_write(buffer, buffer_u8, getGravity);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 115);
+buffer_write(buffer, buffer_u8, getGravity);
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
+buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 116);
+buffer_write(buffer, buffer_string, sha1_string_unicode(password));
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 116);
+buffer_write(buffer, buffer_string, sha1_string_unicode(password));
+for(var i=0; i&lt;sockets; i++){
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+}
+
 alarm[0] = 90;
 </string>
           </argument>
@@ -991,6 +1296,48 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(timeList) &gt; 0){
             network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
         }
         ds_list_clear(timeList);
+    }
+}
+
+for(var a=0; a&lt;ds_list_size(samusList); a++){
+    var match = false;
+    for(var b=0; b&lt;ds_list_size(idList); b++){
+        var arrList = idList[| b];
+        if(samusList[| a] == arrList[0, 0]){
+            match = true;
+        }
+    }
+    if(!match) ds_list_delete(samusList, a);
+}
+
+for(var a=0; a&lt;ds_list_size(saxList); a++){
+    var match = false;
+    for(var b=0; b&lt;ds_list_size(idList); b++){
+        var arrList = idList[| b];
+        if(saxList[| a] == arrList[0, 0]){
+            match = true;
+        }
+    }
+    if(!match) ds_list_delete(saxList, a);
+}
+
+for(var a=0; a&lt;ds_list_size(deadList); a++){
+    var match = false;
+    for(var b=0; b&lt;ds_list_size(idList); b++){
+        var arrList = idList[| b];
+        if(deadList[| a] == arrList[0, 0]){
+            match = true;
+        }
+    }
+    if(!match) ds_list_delete(deadList, a);
+}
+
+if(ds_list_size(samusList) &gt; 0 &amp;&amp; ds_list_size(deadList) &gt; 0){
+    if(ds_list_size(samusList) == ds_list_size(deadList) || ds_list_size(deadList) &gt; ds_list_size(samusList)){
+        var evnt = global.event[308];
+        evnt++;
+        if(global.event[308] &lt; 4) global.event[308] = evnt;
+        ds_list_clear(deadList);
     }
 }
 
@@ -1353,6 +1700,16 @@ switch(type_event){
             for(var i=0; i&lt;ds_list_size(idList); i++){
                 var arrList = idList[| i];
                 if(arrList[0, 1] == socket){
+                    var findID = ds_list_find_index(samusList, arrList[0, 0]);
+                    if(findID &gt;= 0){
+                        ds_list_delete(samusList, findID);
+                    }
+                    
+                    var findID = ds_list_find_index(saxList, arrList[0, 0]);
+                    if(findID &gt;= 0){
+                        ds_list_delete(saxList, findID);
+                    }
+                    
                     ds_list_delete(idList, i);
                 }
             }
@@ -1362,6 +1719,8 @@ switch(type_event){
                 with(oReset) alarm[10] = 1800;
             }
         }
+        
+        
         break;
     case network_type_data:
         var _buffer = ds_map_find_value(async_load, "buffer");
@@ -1373,14 +1732,43 @@ switch(type_event){
         if(!is_real(bufferSizePacket)) exit;
         if(bufferSizePacket + 4 != bufferSize) exit;
         //show_debug_message("done");
+        team = 0;
+        for(var i=0; i&lt;ds_list_size(idList); i++){
+            var arrList = idList[| i];
+            if(arrList[0, 1] == socket){
+                var findID = ds_list_find_index(samusList, arrList[0, 0]);
+                if(findID &gt;= 0){
+                    team = 1;
+                }
+                
+                var findID = ds_list_find_index(saxList, arrList[0, 0]);
+                if(findID &gt;= 0){
+                    team = 2;
+                }
+            }
+        }
+        
         msgid = buffer_read(_buffer, buffer_u8);
         switch(msgid){
             case 254:
                 var clientID = buffer_read(_buffer, buffer_u8);
+                var sax = buffer_read(_buffer, buffer_u8);
                 for(var i=0; i&lt;ds_list_size(idList); i++){
                     var arrList = idList[| i];
                     if(arrList[0, 0] == clientID){
                         ds_list_delete(idList, i);
+                    }
+                }
+                
+                if(sax == 0){
+                    var findID = ds_list_find_index(samusList, clientID);
+                    if(findID &gt;= 0){
+                        ds_list_delete(samusList, findID);
+                    }
+                } else {
+                    var findID = ds_list_find_index(saxList, clientID);
+                    if(findID &gt;= 0){
+                        ds_list_delete(saxList, findID);
                     }
                 }
                 
@@ -1394,6 +1782,7 @@ switch(type_event){
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_u8, 254);
                 buffer_write(buffer, buffer_u8, clientID);
+                
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1406,6 +1795,7 @@ switch(type_event){
             case 200:
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var preferredID = buffer_read(_buffer, buffer_u8);
+                var sax = buffer_read(_buffer, buffer_u8);
                 tempList = ds_list_create();
                 if(ds_list_size(idList) &gt; 0){
                     for(var i=0; i&lt;ds_list_size(idList); i++){
@@ -1454,6 +1844,39 @@ switch(type_event){
                                     buffer_write(buffer, buffer_s32, bufferSize);
                                     buffer_write(buffer, buffer_u8, 200);
                                     network_send_packet(socket, buffer, buffer_tell(buffer));
+                                    
+                                    if(sax == 0){
+                                        var findID = ds_list_find_index(samusList, clientID);
+                                        if(findID &gt;= 0){
+                                            ds_list_delete(samusList, findID);
+                                        }
+                                    } else {
+                                        var findID = ds_list_find_index(saxList, clientID);
+                                        if(findID &gt;= 0){
+                                            ds_list_delete(saxList, findID);
+                                        }
+                                    }
+                                    
+                                    for(var i=0; i&lt;sockets; i++){
+                                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                                            var arr = idList[| f];
+                                            var arrID = arr[0, 0];
+                                            var arrSocket = arr[0, 1];
+                                            if(arrSocket == socket){
+                                                if(sax == 0){
+                                                    var findID = ds_list_find_index(samusList, preferredID);
+                                                    if(findID &lt; 0){
+                                                        ds_list_add(samusList, preferredID);
+                                                    }
+                                                } else {
+                                                    var findID = ds_list_find_index(saxList, preferredID);
+                                                    if(findID &lt; 0){
+                                                        ds_list_add(saxList, preferredID);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1482,6 +1905,37 @@ switch(type_event){
                 var clientFXTimer = buffer_read(_buffer, buffer_s8);
                 var clientRoomPrev = buffer_read(_buffer, buffer_s16);
                 var clientState = buffer_read(_buffer, buffer_u8);
+                var clientSAX = buffer_read(_buffer, buffer_u8);
+                var clientSpeedboost = buffer_read(_buffer, buffer_u8);
+                var clientSJBall = buffer_read(_buffer, buffer_u8);
+                var clientSJDir = buffer_read(_buffer, buffer_u8);
+                var clientSpeedCharge = buffer_read(_buffer, buffer_u8);
+                var clientPlayerHealth = buffer_read(_buffer, buffer_s16);
+                var clientSpectator = buffer_read(_buffer, buffer_u8);
+                var clientInvincible = buffer_read(_buffer, buffer_u8);
+                var clientMosaic = buffer_read(_buffer, buffer_u8);
+                var clientReform = buffer_read(_buffer, buffer_u8);
+                var clientVisible = buffer_read(_buffer, buffer_u8);
+                
+                var arr;
+                arr[0] = current_time;
+                arr[1] = clientID;
+                arr[2] = clientX;
+                arr[3] = clientY;
+                
+                var list = ds_list_create();
+                if(ds_map_exists(posMap, socket)){
+                    var list = ds_map_find_value(posMap, socket);
+                }
+                
+                ds_list_add(list, arr); 
+                
+                if(ds_list_size(list) &gt; 180) ds_list_delete(list, 0);
+                
+                ds_map_replace(posMap, socket, list);
+                //show_debug_message(list[| ds_list_size(list) - 1])
+                posMapModified = true;
+                
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -1511,6 +1965,17 @@ switch(type_event){
                 buffer_write(buffer, buffer_s8, clientFXTimer);
                 buffer_write(buffer, buffer_s16, clientRoomPrev);
                 buffer_write(buffer, buffer_u8, clientState);
+                buffer_write(buffer, buffer_u8, clientSAX);
+                buffer_write(buffer, buffer_u8, clientSpeedboost);
+                buffer_write(buffer, buffer_u8, clientSJBall);
+                buffer_write(buffer, buffer_u8, clientSJDir);
+                buffer_write(buffer, buffer_u8, clientSpeedCharge);
+                buffer_write(buffer, buffer_s16, clientPlayerHealth);
+                buffer_write(buffer, buffer_u8, clientSpectator);
+                buffer_write(buffer, buffer_u8, clientInvincible);
+                buffer_write(buffer, buffer_u8, clientMosaic);
+                buffer_write(buffer, buffer_u8, clientReform);
+                buffer_write(buffer, buffer_u8, clientVisible);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1535,6 +2000,17 @@ switch(type_event){
                 buffer_write(buffer, buffer_s8, clientFXTimer);
                 buffer_write(buffer, buffer_s16, clientRoomPrev);
                 buffer_write(buffer, buffer_u8, clientState);
+                buffer_write(buffer, buffer_u8, clientSAX);
+                buffer_write(buffer, buffer_u8, clientSpeedboost);
+                buffer_write(buffer, buffer_u8, clientSJBall);
+                buffer_write(buffer, buffer_u8, clientSJDir);
+                buffer_write(buffer, buffer_u8, clientSpeedCharge);
+                buffer_write(buffer, buffer_s16, clientPlayerHealth);
+                buffer_write(buffer, buffer_u8, clientSpectator);
+                buffer_write(buffer, buffer_u8, clientInvincible);
+                buffer_write(buffer, buffer_u8, clientMosaic);
+                buffer_write(buffer, buffer_u8, clientReform);
+                buffer_write(buffer, buffer_u8, clientVisible);
                 for(var i=0; i&lt;sockets; i++){
                     if(playerList[| i] != socket){
                         network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
@@ -1546,6 +2022,20 @@ switch(type_event){
                 var clientRoom = buffer_read(_buffer, buffer_s16);
                 var clientMapX = buffer_read(_buffer, buffer_s16);
                 var clientMapY = buffer_read(_buffer, buffer_s16);
+                var sax = buffer_read(_buffer, buffer_u8);
+                var spectator = buffer_read(_buffer, buffer_u8);
+                var findSamus = ds_list_find_index(samusList, clientID);
+                ds_map_replace(global.readyMap, clientID, clientRoom);
+                if(findSamus != -1 &amp;&amp; spectator &amp;&amp; !sax &amp;&amp; global.event[308] &lt; 4){
+                    if(ds_list_size(deadList) &gt; 0){
+                        var findDead = ds_list_find_index(deadList, clientID);
+                        if(findDead == -1){
+                            ds_list_add(deadList, clientID);
+                        }
+                    } else {
+                        ds_list_add(deadList, clientID);
+                    }
+                }
                 var sockets = ds_list_size(playerList);
                 if(!global.mapPlayerIconSync){
                     clientMapX = 3;
@@ -1563,6 +2053,8 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, clientRoom);
                 buffer_write(buffer, buffer_s16, clientMapX);
                 buffer_write(buffer, buffer_s16, clientMapY);
+                buffer_write(buffer, buffer_u8, sax);
+                buffer_write(buffer, buffer_u8, spectator);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -1571,6 +2063,8 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, clientRoom);
                 buffer_write(buffer, buffer_s16, clientMapX);
                 buffer_write(buffer, buffer_s16, clientMapY);
+                buffer_write(buffer, buffer_u8, sax);
+                buffer_write(buffer, buffer_u8, spectator);
                 for(var i=0; i&lt;sockets; i++){
                     if(playerList[| i] != socket){
                         network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
@@ -1614,6 +2108,10 @@ switch(type_event){
                 break;
             case 103:
                 var ping = buffer_read(_buffer, buffer_u32);
+                var realPing = buffer_read(_buffer, buffer_u16);
+                
+                ds_map_replace(map, socket, realPing);
+                
                 buffer_delete(buffer);
                 var size, type, alignment;
                 size = 1024;
@@ -1629,6 +2127,153 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, 105);
                 buffer_write(buffer, buffer_u32, ping);
                 network_send_packet(socket, buffer, buffer_tell(buffer));
+                break;
+            case 104:
+                //receive, check player's team, send out to all, store in separate player item lists on client side
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var spacejump = buffer_read(_buffer, buffer_u8);
+                var screwattack = buffer_read(_buffer, buffer_u8);
+                var spiderball = buffer_read(_buffer, buffer_u8);
+                var speedbooster = buffer_read(_buffer, buffer_u8);
+                var bomb = buffer_read(_buffer, buffer_u8);
+                var ibeam = buffer_read(_buffer, buffer_u8);
+                var wbeam = buffer_read(_buffer, buffer_u8);
+                var pbeam = buffer_read(_buffer, buffer_u8);
+                var sbeam = buffer_read(_buffer, buffer_u8);
+                var cbeam = buffer_read(_buffer, buffer_u8);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 108);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_u8, team);
+                buffer_write(buffer, buffer_u8, spacejump);
+                buffer_write(buffer, buffer_u8, screwattack);
+                buffer_write(buffer, buffer_u8, spiderball);
+                buffer_write(buffer, buffer_u8, speedbooster);
+                buffer_write(buffer, buffer_u8, bomb);
+                buffer_write(buffer, buffer_u8, ibeam);
+                buffer_write(buffer, buffer_u8, wbeam);
+                buffer_write(buffer, buffer_u8, pbeam);
+                buffer_write(buffer, buffer_u8, sbeam);
+                buffer_write(buffer, buffer_u8, cbeam);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 108);
+                buffer_write(buffer, buffer_u8, clientID);
+                buffer_write(buffer, buffer_u8, team);
+                buffer_write(buffer, buffer_u8, spacejump);
+                buffer_write(buffer, buffer_u8, screwattack);
+                buffer_write(buffer, buffer_u8, spiderball);
+                buffer_write(buffer, buffer_u8, speedbooster);
+                buffer_write(buffer, buffer_u8, bomb);
+                buffer_write(buffer, buffer_u8, ibeam);
+                buffer_write(buffer, buffer_u8, wbeam);
+                buffer_write(buffer, buffer_u8, pbeam);
+                buffer_write(buffer, buffer_u8, sbeam);
+                buffer_write(buffer, buffer_u8, cbeam);
+                var sockets = ds_list_size(playerList);
+                for(var i=0; i&lt;sockets; i++){
+                    if(playerList[| i] != socket){
+                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                    }
+                }
+                break;
+            case 105:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var tempSocket = -100;
+                
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 109);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 109);
+                
+                for(var i=0; i&lt;ds_list_size(idList); i++){
+                    var arrList = idList[| i];
+                    if(clientID == arrList[0, 0]){
+                        tempSocket = arrList[0, 1];
+                    }
+                }
+                
+                if(tempSocket != -100){
+                    network_send_packet(tempSocket, buffer, buffer_tell(buffer));
+                }
+                break;
+            case 106:
+                var checkID = buffer_read(_buffer, buffer_u8);
+                var checkX = buffer_read(_buffer, buffer_s16);
+                var checkY = buffer_read(_buffer, buffer_s16);
+                var checkBeam = buffer_read(_buffer, buffer_u8);
+                var checkMissile = buffer_read(_buffer, buffer_u8);
+                var checkDamage = buffer_read(_buffer, buffer_u8);
+                var checkFreeze = buffer_read(_buffer, buffer_u8);
+                var tempSocket = -100;
+                for(var i=0; i&lt;ds_list_size(idList); i++){
+                    var arrList = idList[| i];
+                    if(checkID == arrList[0, 0]){
+                        tempSocket = arrList[0, 1];
+                    }
+                }
+                
+                var lag = ds_map_find_value(map, socket);
+
+                var lagPositions = ds_map_find_value(posMap, tempSocket);
+                
+                var timeToCheck = current_time;
+                
+                if(lag != undefined &amp;&amp; lag &lt;= 750 &amp;&amp; lagPositions != undefined){
+                    show_debug_message("im in");
+                    for(var g=0; g&lt;ds_list_size(lagPositions); g++){
+                        var lagPosArr = lagPositions[| g];
+                        var lagPosTime = lagPosArr[0];
+                        var lagPosID = lagPosArr[1];
+                        var lagPosX = lagPosArr[2];
+                        var lagPosY = lagPosArr[3];
+                        if((timeToCheck - lag) &gt; lagPosTime &amp;&amp; checkX == lagPosX &amp;&amp; checkY == lagPosY &amp;&amp; checkID == lagPosID){
+                            show_debug_message("yeah " + string(lagPosX) + " " + string(lagPosY));
+                            
+                            buffer_delete(buffer);
+                            var size, type, alignment;
+                            size = 1024;
+                            type = buffer_grow;
+                            alignment = 1;
+                            buffer = buffer_create(size, type, alignment);
+                            buffer_seek(buffer, buffer_seek_start, 0);
+                            buffer_write(buffer, buffer_u8, 110);
+                            buffer_write(buffer, buffer_u8, checkBeam);
+                            buffer_write(buffer, buffer_u8, checkMissile);
+                            buffer_write(buffer, buffer_u8, checkDamage);
+                            buffer_write(buffer, buffer_u8, checkFreeze);
+                            var bufferSize = buffer_tell(buffer);
+                            buffer_seek(buffer, buffer_seek_start, 0);
+                            buffer_write(buffer, buffer_s32, bufferSize);
+                            buffer_write(buffer, buffer_u8, 110);
+                            buffer_write(buffer, buffer_u8, checkBeam);
+                            buffer_write(buffer, buffer_u8, checkMissile);
+                            buffer_write(buffer, buffer_u8, checkDamage);
+                            buffer_write(buffer, buffer_u8, checkFreeze);
+                            
+                            if(tempSocket != -100){
+                                network_send_packet(tempSocket, buffer, buffer_tell(buffer));
+                            }
+                            break;
+                        }
+                    }
+                }
+                
                 break;
             case 0:
                 //Item toggle syncing
@@ -1684,7 +2329,24 @@ switch(type_event){
                 for(var i=0; i&lt;sockets; i++){
                     if(playerList[| i] != socket){
                         if(global.itemSync &amp;&amp; global.itemToggleSync){
-                            network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                            for(var i=0; i&lt;sockets; i++){
+                                for(var f=0; f&lt;ds_list_size(idList); f++){
+                                    var arr = idList[| f];
+                                    var arrID = arr[0, 0];
+                                    var arrSocket = arr[0, 1];
+                                    if(arrSocket == playerList[| i]){
+                                        var findID = ds_list_find_index(samusList, arrID);
+                                        if(findID &gt;= 0 &amp;&amp; team = 1){
+                                            network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                        }
+                                        
+                                        var findID = ds_list_find_index(saxList, arrID);
+                                        if(findID &gt;= 0 &amp;&amp; team = 2){
+                                            network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else {
                         var size, type, alignment;
@@ -1710,6 +2372,7 @@ switch(type_event){
                 break;
             case 1:
                 var name = buffer_read(_buffer, buffer_string);
+                var sax = buffer_read(_buffer, buffer_u8);
                 var findsocket = ds_list_find_index(playerList, socket);
                 if(findsocket &lt; 0){
                     ds_list_add(playerList, socket); 
@@ -1726,6 +2389,45 @@ switch(type_event){
                         }
                     }
                 }
+                
+                var sockets = ds_list_size(playerList);
+                for(var i=0; i&lt;sockets; i++){
+                    for(var f=0; f&lt;ds_list_size(idList); f++){
+                        var arr = idList[| f];
+                        var arrID = arr[0, 0];
+                        var arrSocket = arr[0, 1];
+                        if(arrSocket == socket){
+                            if(sax == 0){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &lt; 0){
+                                    ds_list_add(samusList, arrID);
+                                }
+                            } else {
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &lt; 0){
+                                    ds_list_add(saxList, arrID);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 114);
+                buffer_write(buffer, buffer_u8, global.lobbyLocked);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 114);
+                buffer_write(buffer, buffer_u8, global.lobbyLocked);
+                
+                network_send_packet(socket, buffer, buffer_tell(buffer));
                 break;
             case 2:
                 var _queenHealth = buffer_read(_buffer, buffer_s32);
@@ -2052,17 +2754,45 @@ switch(type_event){
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 var itemArr = item[| 0];
-                if(is_array(itemArr)){
-                    for(var i=0; i&lt;array_length_1d(global.item); i++){
-                        for(var f=0; f&lt;array_height_2d(itemArr); f++){
-                            if(i == itemArr[f, 1]){
-                                if(global.item[i] != itemArr[f, 0] &amp;&amp; itemArr[f, 0] == 1){
-                                    global.item[i] = itemArr[f, 0];
+                for(var v=0; v&lt;sockets; v++){
+                    for(var g=0; g&lt;ds_list_size(idList); g++){
+                        var arr = idList[| g];
+                        var arrID = arr[0, 0];
+                        var arrSocket = arr[0, 1];
+                        if(arrSocket == playerList[| v] &amp;&amp; playerList[| v] == socket){
+                            var findID = ds_list_find_index(samusList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 1){
+                                if(is_array(itemArr)){
+                                    for(var i=0; i&lt;array_length_1d(global.itemSamus); i++){
+                                        for(var f=0; f&lt;array_height_2d(itemArr); f++){
+                                            if(i == itemArr[f, 1]){
+                                                if(global.itemSamus[i] != itemArr[f, 0] &amp;&amp; itemArr[f, 0] == 1){
+                                                    global.itemSamus[i] = itemArr[f, 0];
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            var findID = ds_list_find_index(saxList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 2){
+                                if(is_array(itemArr)){
+                                    for(var i=0; i&lt;array_length_1d(global.itemSAX); i++){
+                                        for(var f=0; f&lt;array_height_2d(itemArr); f++){
+                                            if(i == itemArr[f, 1]){
+                                                if(global.itemSAX[i] != itemArr[f, 0] &amp;&amp; itemArr[f, 0] == 1){
+                                                    global.itemSAX[i] = itemArr[f, 0];
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                
                 buffer_delete(buffer);
                 var size, type, alignment;
                 size = 1024;
@@ -2081,7 +2811,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2186,18 +2931,50 @@ switch(type_event){
                     buffer_write(buffer, buffer_u8, 10);
                     buffer_write(buffer, buffer_u16, tileCount);
                     
-                    for(var i=0; i&lt;tileCount; i++){
-                        var tileX = buffer_read(_buffer, buffer_u8);
-                        var tileY = buffer_read(_buffer, buffer_u8);
-                        var tileData = buffer_read(_buffer, buffer_u8);
-                        buffer_write(buffer, buffer_u8, tileX);
-                        buffer_write(buffer, buffer_u8, tileY);
-                        buffer_write(buffer, buffer_u8, tileData);
-                        if(tileData &gt; global.dmap[tileX, tileY]){
-                            global.dmap[tileX, tileY] = tileData;
-                        } else if(tileData &lt; global.dmap[tileX, tileY]){
-                            if(global.dmap[tileX, tileY] == 10 &amp;&amp; tileData == 1){
-                                global.dmap[tileX, tileY] = tileData;
+                    var sockets = ds_list_size(playerList);
+                    for(var v=0; v&lt;sockets; v++){
+                        for(var g=0; g&lt;ds_list_size(idList); g++){
+                            var arr = idList[| g];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| v] &amp;&amp; playerList[| v] == socket){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    for(var i=0; i&lt;tileCount; i++){
+                                        var tileX = buffer_read(_buffer, buffer_u8);
+                                        var tileY = buffer_read(_buffer, buffer_u8);
+                                        var tileData = buffer_read(_buffer, buffer_u8);
+                                        buffer_write(buffer, buffer_u8, tileX);
+                                        buffer_write(buffer, buffer_u8, tileY);
+                                        buffer_write(buffer, buffer_u8, tileData);
+                                        if(tileData &gt; global.dmapSamus[tileX, tileY]){
+                                            global.dmapSamus[tileX, tileY] = tileData;
+                                        } else if(tileData &lt; global.dmapSamus[tileX, tileY]){
+                                            if(global.dmapSamus[tileX, tileY] == 10 &amp;&amp; tileData == 1){
+                                                global.dmapSamus[tileX, tileY] = tileData;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    for(var i=0; i&lt;tileCount; i++){
+                                        var tileX = buffer_read(_buffer, buffer_u8);
+                                        var tileY = buffer_read(_buffer, buffer_u8);
+                                        var tileData = buffer_read(_buffer, buffer_u8);
+                                        buffer_write(buffer, buffer_u8, tileX);
+                                        buffer_write(buffer, buffer_u8, tileY);
+                                        buffer_write(buffer, buffer_u8, tileData);
+                                        if(tileData &gt; global.dmapSAX[tileX, tileY]){
+                                            global.dmapSAX[tileX, tileY] = tileData;
+                                        } else if(tileData &lt; global.dmapSAX[tileX, tileY]){
+                                            if(global.dmapSAX[tileX, tileY] == 10 &amp;&amp; tileData == 1){
+                                                global.dmapSAX[tileX, tileY] = tileData;
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -2206,11 +2983,24 @@ switch(type_event){
                     
                     buffer_write(buffer, buffer_u8, clientID);
                     
-                    var sockets = ds_list_size(playerList);
-                    
                     if(global.mapSync){
                         for(var i=0; i&lt;sockets; i++){
-                            network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                            for(var f=0; f&lt;ds_list_size(idList); f++){
+                                var arr = idList[| f];
+                                var arrID = arr[0, 0];
+                                var arrSocket = arr[0, 1];
+                                if(arrSocket == playerList[| i]){
+                                    var findID = ds_list_find_index(samusList, arrID);
+                                    if(findID &gt;= 0 &amp;&amp; team = 1){
+                                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                    }
+                                    
+                                    var findID = ds_list_find_index(saxList, arrID);
+                                    if(findID &gt;= 0 &amp;&amp; team = 2){
+                                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                    }
+                                }
+                            }
                         }
                     } else {
                         network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2244,7 +3034,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2272,7 +3077,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2300,7 +3120,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2328,7 +3163,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2356,7 +3206,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2384,7 +3249,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2412,7 +3292,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2440,7 +3335,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2468,7 +3378,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.itemSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2497,7 +3422,6 @@ switch(type_event){
                     ds_list_add(resetList, clientID);
                 }
                 break;
-                /*
             case 21:
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var dir = buffer_read(_buffer, buffer_s16);
@@ -2538,6 +3462,7 @@ switch(type_event){
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var bombX = buffer_read(_buffer, buffer_s16);
                 var bombY = buffer_read(_buffer, buffer_s16);
+                var sax = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -2550,6 +3475,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 buffer_write(buffer, buffer_s16, bombX);
                 buffer_write(buffer, buffer_s16, bombY);
+                buffer_write(buffer, buffer_u8, sax);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -2557,6 +3483,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 buffer_write(buffer, buffer_s16, bombX);
                 buffer_write(buffer, buffer_s16, bombY);
+                buffer_write(buffer, buffer_u8, sax);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
@@ -2568,6 +3495,9 @@ switch(type_event){
                 var missileX = buffer_read(_buffer, buffer_s16);
                 var missileY = buffer_read(_buffer, buffer_s16);
                 var sax = buffer_read(_buffer, buffer_u8);
+                var velX = buffer_read(_buffer, buffer_s8);
+                var velY = buffer_read(_buffer, buffer_s8);
+                var icemissiles = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -2583,6 +3513,9 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, missileX);
                 buffer_write(buffer, buffer_s16, missileY);
                 buffer_write(buffer, buffer_u8, sax);
+                buffer_write(buffer, buffer_s8, velX);
+                buffer_write(buffer, buffer_s8, velY);
+                buffer_write(buffer, buffer_u8, icemissiles);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -2593,6 +3526,9 @@ switch(type_event){
                 buffer_write(buffer, buffer_s16, missileX);
                 buffer_write(buffer, buffer_s16, missileY);
                 buffer_write(buffer, buffer_u8, sax);
+                buffer_write(buffer, buffer_s8, velX);
+                buffer_write(buffer, buffer_s8, velY);
+                buffer_write(buffer, buffer_u8, icemissiles);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
@@ -2601,6 +3537,7 @@ switch(type_event){
                 var clientID = buffer_read(_buffer, buffer_u8);
                 var pbombX = buffer_read(_buffer, buffer_s16);
                 var pbombY = buffer_read(_buffer, buffer_s16);
+                var sax = buffer_read(_buffer, buffer_u8);
                 var sockets = ds_list_size(playerList);
                 buffer_delete(buffer);
                 var size, type, alignment;
@@ -2613,6 +3550,7 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 buffer_write(buffer, buffer_s16, pbombX);
                 buffer_write(buffer, buffer_s16, pbombY);
+                buffer_write(buffer, buffer_u8, sax);
                 var bufferSize = buffer_tell(buffer);
                 buffer_seek(buffer, buffer_seek_start, 0);
                 buffer_write(buffer, buffer_s32, bufferSize);
@@ -2620,11 +3558,11 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 buffer_write(buffer, buffer_s16, pbombX);
                 buffer_write(buffer, buffer_s16, pbombY);
+                buffer_write(buffer, buffer_u8, sax);
                 for(var i=0; i&lt;sockets; i++){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
                 break;
-                */
             case 25:
                 var playerhealth = buffer_read(_buffer, buffer_s16);
                 var clientID = buffer_read(_buffer, buffer_u8);
@@ -2647,7 +3585,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.healthSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2675,7 +3628,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.ammoSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2703,7 +3671,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.ammoSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2731,7 +3714,22 @@ switch(type_event){
                 buffer_write(buffer, buffer_u8, clientID);
                 if(global.ammoSync){
                     for(var i=0; i&lt;sockets; i++){
-                        network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                        for(var f=0; f&lt;ds_list_size(idList); f++){
+                            var arr = idList[| f];
+                            var arrID = arr[0, 0];
+                            var arrSocket = arr[0, 1];
+                            if(arrSocket == playerList[| i]){
+                                var findID = ds_list_find_index(samusList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 1){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                                
+                                var findID = ds_list_find_index(saxList, arrID);
+                                if(findID &gt;= 0 &amp;&amp; team = 2){
+                                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                                }
+                            }
+                        }
                     }
                 } else {
                     network_send_packet(socket, buffer, buffer_tell(buffer));
@@ -2781,13 +3779,168 @@ switch(type_event){
                     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
                 }
                 break;
+            case 31:
+                var clientID = buffer_read(_buffer, buffer_u8);
+                var otherAbsorbRelativeX = buffer_read(_buffer, buffer_s16);
+                var otherAbsorbRelativeY = buffer_read(_buffer, buffer_s16);
+                var otherAbsorbSpriteHeight = buffer_read(_buffer, buffer_u8);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 31);
+                buffer_write(buffer, buffer_s16, otherAbsorbRelativeX);
+                buffer_write(buffer, buffer_s16, otherAbsorbRelativeY);
+                buffer_write(buffer, buffer_u8, otherAbsorbSpriteHeight);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 31);
+                buffer_write(buffer, buffer_s16, otherAbsorbRelativeX);
+                buffer_write(buffer, buffer_s16, otherAbsorbRelativeY);
+                buffer_write(buffer, buffer_u8, otherAbsorbSpriteHeight);
+                var sockets = ds_list_size(playerList);
+                for(var i=0; i&lt;sockets; i++){
+                    for(var f=0; f&lt;ds_list_size(idList); f++){
+                        var arr = idList[| f];
+                        var arrID = arr[0, 0];
+                        var arrSocket = arr[0, 1];
+                        if(arrID == clientID){
+                            network_send_packet(arrSocket, buffer, buffer_tell(buffer));
+                        }
+                    }
+                }
+                break;
+            case 32:
+                event_user(0);
+                break;
+            case 33:
+                var lobbyLocked = buffer_read(_buffer, buffer_u8);
+                global.lobbyLocked = lobbyLocked;
+                break;
+            case 34:
+                var saxmode = buffer_read(_buffer, buffer_u8);
+                if(saxmode){
+                    if(instance_exists(oServer)){
+                        var findIDSamus = ds_list_find_index(oServer.samusList, ID);
+                        if(findIDSamus &gt;= 0){
+                            team = 1;
+                        }
+                        
+                        var findIDSAX = ds_list_find_index(oServer.saxList, ID);
+                        if(findIDSAX &gt;= 0){
+                            team = 2;
+                        }
+                        
+                        if(team == 1){
+                            team = 2;
+                            ds_list_delete(oServer.samusList, findIDSamus);
+                            ds_list_add(oServer.saxList, ID);
+                            global.newTeam = team;
+                            global.newTeamSocket = socket;
+                            with(oServer) event_user(3);
+                        } else if(team == 2){
+                            team = 1;
+                            ds_list_delete(oServer.saxList, findIDSAX);
+                            ds_list_add(oServer.samusList, ID);
+                            global.newTeam = team;
+                            global.newTeamSocket = socket;
+                            with(oServer) event_user(3);
+                        }
+                    }
+                }
+                global.saxmode = saxmode;
+                break;
+            case 35:
+                var mapposx = buffer_read(_buffer, buffer_s16);
+                var mapposy = buffer_read(_buffer, buffer_s16);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 32);
+                buffer_write(buffer, buffer_s16, mapposx);
+                buffer_write(buffer, buffer_s16, mapposy);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 32);
+                buffer_write(buffer, buffer_s16, mapposx);
+                buffer_write(buffer, buffer_s16, mapposy);
+                var sockets = ds_list_size(playerList);
+                for(var i=0; i&lt;sockets; i++){
+                    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
+            case 36:
+                var mirror = buffer_read(_buffer, buffer_s8);
+                var sentRoom = buffer_read(_buffer, buffer_s16);
+                var playerX = buffer_read(_buffer, buffer_s16);
+                var playerY = buffer_read(_buffer, buffer_s16);
+                var sax = buffer_read(_buffer, buffer_s8);
+                buffer_delete(buffer);
+                var size, type, alignment;
+                size = 1024;
+                type = buffer_grow;
+                alignment = 1;
+                buffer = buffer_create(size, type, alignment);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_u8, 33);
+                buffer_write(buffer, buffer_s8, mirror);
+                buffer_write(buffer, buffer_s16, sentRoom);
+                buffer_write(buffer, buffer_s16, playerX);
+                buffer_write(buffer, buffer_s16, playerY);
+                buffer_write(buffer, buffer_s8, sax);
+                var bufferSize = buffer_tell(buffer);
+                buffer_seek(buffer, buffer_seek_start, 0);
+                buffer_write(buffer, buffer_s32, bufferSize);
+                buffer_write(buffer, buffer_u8, 33);
+                buffer_write(buffer, buffer_s8, mirror);
+                buffer_write(buffer, buffer_s16, sentRoom);
+                buffer_write(buffer, buffer_s16, playerX);
+                buffer_write(buffer, buffer_s16, playerY);
+                buffer_write(buffer, buffer_s8, sax);
+                var sockets = ds_list_size(playerList);
+                for(var i=0; i&lt;sockets; i++){
+                    if(playerList[| i] != socket) network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+                }
+                break;
             case 50:
                 if(bufferSize &lt; 350) exit;
                 show_debug_message("item");
-                for(var i=0; i&lt;array_length_1d(global.item); i++){
-                    var receivedItem = buffer_read(_buffer, buffer_u8);
-                    if(receivedItem == 1 &amp;&amp; global.item[i] == 0){
-                        global.item[i] = receivedItem;
+                var sockets = ds_list_size(playerList);
+                for(var v=0; v&lt;sockets; v++){
+                    for(var g=0; g&lt;ds_list_size(idList); g++){
+                        var arr = idList[| g];
+                        var arrID = arr[0, 0];
+                        var arrSocket = arr[0, 1];
+                        if(arrSocket == playerList[| v] &amp;&amp; playerList[| v] == socket){
+                            var findID = ds_list_find_index(samusList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 1){
+                                for(var i=0; i&lt;array_length_1d(global.itemSamus); i++){
+                                    var receivedItem = buffer_read(_buffer, buffer_u8);
+                                    if(receivedItem == 1 &amp;&amp; global.itemSamus[i] == 0){
+                                        global.itemSamus[i] = receivedItem;
+                                    }
+                                }
+                            }
+                            
+                            var findID = ds_list_find_index(saxList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 2){
+                                for(var i=0; i&lt;array_length_1d(global.itemSAX); i++){
+                                    var receivedItem = buffer_read(_buffer, buffer_u8);
+                                    if(receivedItem == 1 &amp;&amp; global.itemSAX[i] == 0){
+                                        global.itemSAX[i] = receivedItem;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 alarm[2] = 30;
@@ -2819,13 +3972,40 @@ switch(type_event){
             case 53:
                 if(bufferSize &lt; 6400) exit;
                 show_debug_message("dmap");
-                for(var i=0; i&lt;array_height_2d(global.dmap); i++){
-                    for(var j=0; j&lt;array_length_2d(global.dmap, i); j++){
-                        var receiveddmap = buffer_read(_buffer, buffer_u8);
-                        if(receiveddmap &gt; global.dmap[i, j]){
-                            global.dmap[i, j] = receiveddmap;
-                        } else if(receiveddmap == 1 &amp;&amp; global.dmap[i, j]){
-                            global.dmap[i, j] = receiveddmap;
+                var sockets = ds_list_size(playerList);
+                for(var v=0; v&lt;sockets; v++){
+                    for(var g=0; g&lt;ds_list_size(idList); g++){
+                        var arr = idList[| g];
+                        var arrID = arr[0, 0];
+                        var arrSocket = arr[0, 1];
+                        if(arrSocket == playerList[| v] &amp;&amp; playerList[| v] == socket){
+                            var findID = ds_list_find_index(samusList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 1){
+                                for(var i=0; i&lt;array_height_2d(global.dmapSamus); i++){
+                                    for(var j=0; j&lt;array_length_2d(global.dmapSamus, i); j++){
+                                        var receiveddmap = buffer_read(_buffer, buffer_u8);
+                                        if(receiveddmap &gt; global.dmapSamus[i, j]){
+                                            global.dmapSamus[i, j] = receiveddmap;
+                                        } else if(receiveddmap == 1 &amp;&amp; global.dmapSamus[i, j]){
+                                            global.dmapSamus[i, j] = receiveddmap;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            var findID = ds_list_find_index(saxList, arrID);
+                            if(findID &gt;= 0 &amp;&amp; team = 2){
+                                for(var i=0; i&lt;array_height_2d(global.dmapSAX); i++){
+                                    for(var j=0; j&lt;array_length_2d(global.dmapSAX, i); j++){
+                                        var receiveddmap = buffer_read(_buffer, buffer_u8);
+                                        if(receiveddmap &gt; global.dmapSAX[i, j]){
+                                            global.dmapSAX[i, j] = receiveddmap;
+                                        } else if(receiveddmap == 1 &amp;&amp; global.dmapSAX[i, j]){
+                                            global.dmapSAX[i, j] = receiveddmap;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -2834,6 +4014,147 @@ switch(type_event){
     }
     break;
 }
+
+if(ds_map_exists(posMap, banSocket) &amp;&amp; !posMapModified){
+    var list = ds_map_find_value(posMap, banSocket);
+    if(ds_list_size(list) &gt; 0){
+        var arr = list[| ds_list_size(list) - 1];
+        arr[0] = current_time;
+        ds_list_add(list, arr);
+        if(ds_list_size(list) &gt; 180) ds_list_delete(list, 0);
+        ds_map_replace(posMap, banSocket, list);
+        //show_debug_message(list[| ds_list_size(list) - 1])
+    }
+}
+
+posMapModified = false;
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="7" enumb="14">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>var saxCountMax = 0;
+var saxCount = 0;
+var sockets = ds_list_size(playerList);
+newTeamList = ds_list_create();
+if(sockets &gt; 2){
+    saxCountMax = round(sockets / 2);
+    if(saxCountMax &gt; sockets / 2) saxCountMax--;
+    for(var i=0; i&lt;sockets; i++){
+        if(saxCount &lt; saxCountMax){
+            newTeamList[| i] = 2;
+            saxCount++;
+        } else newTeamList[| i] = 1;
+    }
+    ds_list_shuffle(newTeamList);
+} else if(sockets == 2){
+    newTeamList[| 0] = 1;
+    newTeamList[| 1] = 2;
+    ds_list_shuffle(newTeamList);
+}
+
+for(var i=0; i&lt;sockets; i++){
+    var newTeam = 0;
+    if(sockets &gt;= 2) newTeam = newTeamList[| i];
+    if(!global.saxmode) newTeam = 1;
+    buffer_delete(buffer);
+    var size, type, alignment;
+    size = 1024;
+    type = buffer_grow;
+    alignment = 1;
+    buffer = buffer_create(size, type, alignment);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_u8, 112);
+    buffer_write(buffer, buffer_u8, global.saxmode);
+    buffer_write(buffer, buffer_u8, newTeam);
+    var bufferSize = buffer_tell(buffer);
+    buffer_seek(buffer, buffer_seek_start, 0);
+    buffer_write(buffer, buffer_s32, bufferSize);
+    buffer_write(buffer, buffer_u8, 112);
+    buffer_write(buffer, buffer_u8, global.saxmode);
+    buffer_write(buffer, buffer_u8, newTeam);
+    network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
+    
+    for(var f=0; f&lt;ds_list_size(idList); f++){
+        var arrList = idList[| f];
+        if(arrList[0, 1] == playerList[| i]){
+            if(newTeam == 1){
+                var findIDSAX = ds_list_find_index(saxList, arrList[0, 0]);
+                if(findIDSAX &gt;= 0){
+                    ds_list_delete(saxList, findIDSAX);
+                    ds_list_add(samusList, arrList[0, 0]);
+                    break;
+                }
+            }
+            
+            if(newTeam == 2){
+                var findIDSamus = ds_list_find_index(samusList, arrList[0, 0]);
+                if(findIDSamus &gt;= 0){
+                    ds_list_delete(samusList, findIDSamus);
+                    ds_list_add(saxList, arrList[0, 0]);
+                    break;
+                } 
+            }
+        }
+    }
+}
+
+ds_list_destroy(newTeamList);
+</string>
+          </argument>
+        </arguments>
+      </action>
+    </event>
+    <event eventtype="7" enumb="13">
+      <action>
+        <libid>1</libid>
+        <id>603</id>
+        <kind>7</kind>
+        <userelative>0</userelative>
+        <isquestion>0</isquestion>
+        <useapplyto>-1</useapplyto>
+        <exetype>2</exetype>
+        <functionname></functionname>
+        <codestring></codestring>
+        <whoName>self</whoName>
+        <relative>0</relative>
+        <isnot>0</isnot>
+        <arguments>
+          <argument>
+            <kind>1</kind>
+            <string>buffer_delete(buffer);
+var size, type, alignment;
+size = 1024;
+type = buffer_grow;
+alignment = 1;
+buffer = buffer_create(size, type, alignment);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_u8, 111);
+buffer_write(buffer, buffer_u8, global.newTeam);
+var bufferSize = buffer_tell(buffer);
+buffer_seek(buffer, buffer_seek_start, 0);
+buffer_write(buffer, buffer_s32, bufferSize);
+buffer_write(buffer, buffer_u8, 111);
+buffer_write(buffer, buffer_u8, global.newTeam);
+
+network_send_packet(global.newTeamSocket, buffer, buffer_tell(buffer));
 </string>
           </argument>
         </arguments>
@@ -2863,9 +4184,11 @@ switch(type_event){
     file_text_close(file);
     global.metdead = list[| 0];
     global.event = list[| 1];
-    global.item = list[| 2];
-    global.dmap = list[| 3];
+    global.itemSamus = list[| 2];
+    global.dmapSamus = list[| 3];
     global.monstersleft = list[| 4];
+    global.itemSAX = list[| 5];
+    global.dmapSAX = list[| 6];
     ds_list_destroy(list);
     alarm[2] = 30;
     alarm[5] = 30;
@@ -2873,7 +4196,6 @@ switch(type_event){
 } else {
     oLoad.alarm[1] = 120;
 }
-
 </string>
           </argument>
         </arguments>
@@ -2899,9 +4221,11 @@ switch(type_event){
             <string>var list = ds_list_create();
 list[| 0] = global.metdead;
 list[| 1] = global.event;
-list[| 2] = global.item;
-list[| 3] = global.dmap;
+list[| 2] = global.itemSamus;
+list[| 3] = global.dmapSamus;
 list[| 4] = global.monstersleft;
+list[| 5] = global.itemSAX;
+list[| 6] = global.dmapSAX;
 if(file_exists(working_directory + global.saveString)){
     file_delete(working_directory + global.saveString);
 }
@@ -2951,6 +4275,9 @@ var sockets = ds_list_size(playerList);
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
+
+global.lobbyLocked = false;
+alarm[11] = 1;
 </string>
           </argument>
         </arguments>
@@ -3003,8 +4330,12 @@ ds_list_destroy(timeList);
 ds_list_destroy(resetList);
 ds_list_destroy(banList);
 ds_list_destroy(kickList);
+ds_list_destroy(samusList);
+ds_list_destroy(saxList);
+ds_list_destroy(deadList);
 ds_grid_destroy(vars);
 ds_map_destroy(map);
+ds_map_destroy(posMap);
 </string>
           </argument>
         </arguments>
