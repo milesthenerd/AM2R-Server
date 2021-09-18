@@ -48,6 +48,16 @@ if(mtankCount != global.mtanks){
     global.mtanks = mtankCount;
 }
 
+var itemCount = 0;
+for(var h=0; h<array_length_1d(global.itemSamus); h++){
+    var val = global.itemSamus[h];
+    if(val == 1 && h != 1){
+        itemCount++;
+    }
+}
+
+global.damageMult = (itemCount / 88) * 3;
+
 //SAX
 
 var etankCount = 0;

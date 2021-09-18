@@ -117,6 +117,8 @@ syncedELM = 0;
 posMapModified = false;
 
 global.lobbyLocked = false;
+
+global.damageMult = 0;
 </string>
           </argument>
         </arguments>
@@ -211,6 +213,7 @@ buffer_write(buffer, buffer_u8, 113);
 buffer_write(buffer, buffer_u8, global.saxmode);
 buffer_write(buffer, buffer_u8, global.lobbyLocked);
 buffer_write(buffer, buffer_u8, samCount);
+buffer_write(buffer, buffer_string, string(global.damageMult));
 var bufferSize = buffer_tell(buffer);
 buffer_seek(buffer, buffer_seek_start, 0);
 buffer_write(buffer, buffer_s32, bufferSize);
@@ -218,6 +221,7 @@ buffer_write(buffer, buffer_u8, 113);
 buffer_write(buffer, buffer_u8, global.saxmode);
 buffer_write(buffer, buffer_u8, global.lobbyLocked);
 buffer_write(buffer, buffer_u8, samCount);
+buffer_write(buffer, buffer_string, string(global.damageMult));
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
