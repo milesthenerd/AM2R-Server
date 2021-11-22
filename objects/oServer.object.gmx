@@ -119,6 +119,10 @@ posMapModified = false;
 global.lobbyLocked = false;
 
 global.damageMult = 0;
+
+global.clientVersion = "V1.4.2";
+
+global.experimental = false;
 </string>
           </argument>
         </arguments>
@@ -214,6 +218,7 @@ buffer_write(buffer, buffer_u8, global.saxmode);
 buffer_write(buffer, buffer_u8, global.lobbyLocked);
 buffer_write(buffer, buffer_u8, samCount);
 buffer_write(buffer, buffer_string, string(global.damageMult));
+buffer_write(buffer, buffer_u8, global.experimental);
 var bufferSize = buffer_tell(buffer);
 buffer_seek(buffer, buffer_seek_start, 0);
 buffer_write(buffer, buffer_s32, bufferSize);
@@ -222,6 +227,7 @@ buffer_write(buffer, buffer_u8, global.saxmode);
 buffer_write(buffer, buffer_u8, global.lobbyLocked);
 buffer_write(buffer, buffer_u8, samCount);
 buffer_write(buffer, buffer_string, string(global.damageMult));
+buffer_write(buffer, buffer_u8, global.experimental);
 for(var i=0; i&lt;sockets; i++){
     network_send_packet(playerList[| i], buffer, buffer_tell(buffer));
 }
@@ -2377,6 +2383,36 @@ switch(type_event){
             case 1:
                 var name = buffer_read(_buffer, buffer_string);
                 var sax = buffer_read(_buffer, buffer_u8);
+                
+                var msg = name; //string to split
+                var splitBy = ","; //string to split the first string by
+                var slot = 0;
+                var splits; //array to hold all splits
+                var str2 = ""; //var to hold the current split we're working on building
+                
+                for(var i=1; i&lt;(string_length(msg)+1); i++) {
+                    var currStr = string_copy(msg, i, 1);
+                    if (currStr == splitBy) {
+                        splits[slot] = str2; //add this split to the array of all splits
+                        slot++;
+                        str2 = "";
+                    } else {
+                        str2 = str2 + currStr;
+                        splits[slot] = str2;
+                    }
+                }
+                
+                var wrongVersion = true;
+                
+                name = splits[0];
+                
+                for(var i=0; i&lt;array_length_1d(splits); i++){
+                    show_debug_message(splits[i]);
+                    if(splits[i] == global.clientVersion) wrongVersion = false;
+                }
+                
+                if(wrongVersion) ds_list_add(kickList, ip);
+                
                 var findsocket = ds_list_find_index(playerList, socket);
                 if(findsocket &lt; 0){
                     ds_list_add(playerList, socket); 

@@ -204,6 +204,7 @@
     <object>objects\oEventSync</object>
     <object>objects\oMapSync</object>
     <object>objects\oMapPlayerIconSync</object>
+    <object>objects\oExperimentalToggle</object>
     <object>objects\oResetToggles</object>
     <object>objects\oDifficulty</object>
     <object>objects\oELM</object>

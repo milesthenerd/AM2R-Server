@@ -58,6 +58,8 @@ for(var h=0; h<array_length_1d(global.itemSamus); h++){
 
 global.damageMult = (itemCount / 88) * 3;
 
+if(global.experimental) global.damageMult = (itemCount / 88) * 5;
+
 //SAX
 
 var etankCount = 0;
