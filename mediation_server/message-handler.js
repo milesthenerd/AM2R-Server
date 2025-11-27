@@ -42,6 +42,11 @@ class MessageHandler {
         if (socketInfo) {
             socketInfo.timeout = require('./constants').Config.DEFAULT_TIMEOUT;
             console.log(`KeepAlive from ${socketInfo.ip}:${socketInfo.tcpPort} - timeout reset to ${socketInfo.timeout}`);
+
+            // Send keepalive response back to client
+            socket.write(Buffer.from(JSON.stringify({
+                ID: MessageTypes.KeepAlive
+            })));
         }
     }
 

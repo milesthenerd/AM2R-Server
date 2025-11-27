@@ -151,4 +151,9 @@ switch (msg_id) {
             nat_cleanup_tunnel(conn_id);
         }
         break;
+
+    case MSG_KEEP_ALIVE:
+        // Keepalive response from mediation server
+        nat_last_mediation_response = current_time;
+        break;
 }
