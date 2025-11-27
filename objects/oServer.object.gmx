@@ -37,6 +37,9 @@ if(!file_exists(working_directory + "\settings.ini")){
     ini_write_real("Settings", "port", 64198);
     ini_write_real("Settings", "maxplayers", 16);
     ini_write_string("Settings", "moderatorpass", string(random_get_seed()));
+    ini_write_string("ModSettings", "use_nat_traversal", "enabled");
+    ini_write_string("ModSettings", "mediation_server_ip", "150.136.166.80");
+    ini_write_real("ModSettings", "mediation_server_port", 7000);
     ini_close();
 }
 ini_open(working_directory + "\settings.ini");
@@ -46,8 +49,8 @@ password = ini_read_string("Settings", "moderatorpass", string(random_get_seed()
 // NAT traversal settings
 var nat_enabled_str = ini_read_string("Settings", "use_nat_traversal", "disabled");
 use_nat_traversal = (nat_enabled_str == "enabled");
-mediation_server_ip = ini_read_string("Settings", "mediation_server", "127.0.0.1");
-mediation_server_port = ini_read_real("Settings", "mediation_port", "6510");
+mediation_server_ip = ini_read_string("Settings", "mediation_server_ip", "150.136.166.80");
+mediation_server_port = ini_read_real("Settings", "mediation_server_port", "7000");
 ini_close();
 show_debug_message("NAT settings: enabled=" + nat_enabled_str + " server=" + mediation_server_ip + ":" + string(mediation_server_port));
 
@@ -108,7 +111,9 @@ if (use_nat_traversal) {
     nat_init_server();
     nat_connect_mediation_server();
     nat_keepalive_timer = 0;
-    NAT_KEEPALIVE_INTERVAL = 300;  // Send keepalive every 300 steps (~5 seconds at 60fps)
+    nat_last_mediation_response = current_time;
+    NAT_KEEPALIVE_INTERVAL = 60;  // Send keepalive every 60 steps (~1 second at 60fps)
+    NAT_MEDIATION_TIMEOUT = 30000;  // 30 seconds without response = dead
 } else {
     // Initialize to safe defaults so cleanup doesn't error
     nat_client_tunnels = -1;
@@ -118,8 +123,8 @@ if (use_nat_traversal) {
     nat_type = 0;
 }
 
-var _port = 64199;
-webpanel = network_create_server_raw(type, _port, 2);
+//var _port = 64199;
+//webpanel = network_create_server_raw(type, _port, 2);
 
 var size, type, alignment;
 size = 1024;
@@ -219,7 +224,7 @@ for(var i=0; i&lt;sockets; i++){
 }
 
 network_destroy(server);
-network_destroy(webpanel);
+//network_destroy(webpanel);
 if(buffer_exists(buffer)){
     buffer_delete(buffer);
 }
@@ -1629,6 +1634,17 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(resetList) &gt; 0){
 if (use_nat_traversal) {
     nat_step_server_hole_punching();
 
+    // Check for mediation server timeout
+    if (mediation_connected &amp;&amp; mediation_socket != -1) {
+        if (current_time - nat_last_mediation_response &gt; NAT_MEDIATION_TIMEOUT) {
+            show_debug_message("NAT Server: Mediation server timeout - no response for " + string(NAT_MEDIATION_TIMEOUT/1000) + " seconds");
+            mediation_connected = false;
+            network_destroy(mediation_socket);
+            mediation_socket = -1;
+            // Server can continue with existing connections
+        }
+    }
+
     // Send keepalive to mediation server to prevent timeout
     nat_keepalive_timer++;
     if (nat_keepalive_timer &gt;= NAT_KEEPALIVE_INTERVAL) {
@@ -1721,6 +1737,8 @@ if (use_nat_traversal) {
                         var json_str = string_copy(tcp_buf_ref, start_index, i - start_index + 1);
                         var msg = json_parse_nat_message(json_str);
                         if (msg != noone) {
+                            // Update last response time from mediation server
+                            nat_last_mediation_response = current_time;
                             nat_handle_server_tcp_message(msg, socket);
                             ds_map_destroy(msg);
                         }
@@ -2407,12 +2425,21 @@ switch(type_event){
         break;
     case network_type_disconnect:
         var socket = ds_map_find_value(async_load, "socket");
+
+        // Check if this is the mediation server disconnecting
+        if (use_nat_traversal &amp;&amp; socket == mediation_socket) {
+            show_debug_message("NAT Server: Mediation server disconnected");
+            mediation_connected = false;
+            mediation_socket = -1;
+            // Don't try to reconnect automatically - server can continue with existing connections
+        }
+
         var findsocket = ds_list_find_index(socketList, socket);
-        
+
         if(findsocket &gt;= 0){
             ds_list_delete(socketList, findsocket);
         }
-        
+
         var findsocket = ds_list_find_index(playerList, socket);
         
         if(findsocket &gt;= 0){
@@ -5084,7 +5111,7 @@ for(var i=0; i&lt;sockets; i++){
 }
 
 network_destroy(server);
-network_destroy(webpanel);
+//network_destroy(webpanel);
 if(buffer_exists(buffer)){
     buffer_delete(buffer);
 }
@@ -5231,6 +5258,30 @@ if(ds_list_size(idList) &gt; 0){
     }
 }
 
+if(use_nat_traversal &amp;&amp; mediation_connected) {
+    draw_text(5, 900, "Connected to " + mediation_server_ip + ":" + string(mediation_server_port));
+    
+    var nat_str = "";
+    
+    switch(nat_type){
+        case -1:
+            nat_str = "Unknown";
+            break;
+        case 0:
+            nat_str = "Direct Mapping";
+            break;
+        case 1:
+            nat_str = "Restricted";
+            break;
+        case 2:
+            nat_str = "Symmetric";
+            break;
+    }
+    
+    draw_text(5, 925, "NAT Type: " + nat_str);
+} else {
+    draw_text(5, 900, "Not connected to NAT server");
+}
 
 
 </string>
