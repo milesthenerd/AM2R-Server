@@ -66,22 +66,41 @@
   <backgrounds name="background"/>
   <paths name="paths"/>
   <scripts name="scripts">
+    <script>scripts\nat_constants.gml</script>
+    <script>scripts\json_encode_nat_message.gml</script>
+    <script>scripts\json_parse_nat_message.gml</script>
+    <script>scripts\nat_init_server.gml</script>
+    <script>scripts\nat_connect_mediation_server.gml</script>
+    <script>scripts\nat_handle_server_tcp_message.gml</script>
+    <script>scripts\nat_handle_server_udp_message.gml</script>
+    <script>scripts\nat_create_client_tunnel.gml</script>
+    <script>scripts\nat_handle_tunnel_connected.gml</script>
+    <script>scripts\nat_find_tunnel_by_socket.gml</script>
+    <script>scripts\nat_step_server_hole_punching.gml</script>
+    <script>scripts\nat_send_hole_punch.gml</script>
+    <script>scripts\nat_cleanup_tunnel.gml</script>
+    <script>scripts\nat_cleanup_server.gml</script>
+    <script>scripts\nat_handle_tcp_message.gml</script>
+    <script>scripts\nat_connect_mediation.gml</script>
+    <script>scripts\nat_init_client.gml</script>
+    <script>scripts\nat_send_tcp_message.gml</script>
+    <script>scripts\nat_step_hole_punching.gml</script>
+    <script>scripts\nat_handle_udp_message.gml</script>
+    <script>scripts\nat_request_connection.gml</script>
+    <script>scripts\nat_cleanup.gml</script>
+    <script>scripts\get_client_key.gml</script>
+    <script>scripts\find_client_by_key.gml</script>
+    <script>scripts\send_to_client.gml</script>
     <script>scripts\strict_compress.gml</script>
     <script>scripts\strict_decompress.gml</script>
     <script>scripts\strict_encode_verb.gml</script>
     <script>scripts\strict_init.gml</script>
     <script>scripts\json_import.gml</script>
-    <script>scripts\reset_globals.gml</script>
     <script>scripts\array_clone.gml</script>
     <script>scripts\check_items.gml</script>
-    <script>scripts\draw_cool_text.gml</script>
     <scripts name="Randomizers">
-      <script>scripts\scr_randomizer_pure.gml</script>
       <script>scripts\scr_missile_create.gml</script>
-      <script>scripts\scr_supermissile_create.gml</script>
-      <script>scripts\scr_energytank_create.gml</script>
       <script>scripts\scr_powerbomb_create.gml</script>
-      <script>scripts\scr_item_create_text.gml</script>
       <script>scripts\scr_item_character_event.gml</script>
       <script>scripts\scr_missile_character_event.gml</script>
       <script>scripts\scr_supermissile_character_event.gml</script>
@@ -126,6 +145,8 @@
       <script>scripts\scr_randomizer_screwattack.gml</script>
       <script>scripts\scr_randomizer_items.gml</script>
       <script>scripts\scr_randomizer_pure_new.gml</script>
+      <script>scripts\scr_randomizer_pure.gml</script>
+      <script>scripts\reset_globals.gml</script>
       <script>scripts\scr_logic_SB_wall.gml</script>
       <script>scripts\scr_randomizer_pure_wall.gml</script>
       <script>scripts\scr_randomizer_pure_vars.gml</script>

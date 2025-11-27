@@ -43,7 +43,16 @@ ini_open(working_directory + "\settings.ini");
 port = ini_read_real("Settings", "port", 64198);
 maxClients = ini_read_real("Settings", "maxplayers", 16);
 password = ini_read_string("Settings", "moderatorpass", string(random_get_seed()));
+// NAT traversal settings
+var nat_enabled_str = ini_read_string("Settings", "use_nat_traversal", "disabled");
+use_nat_traversal = (nat_enabled_str == "enabled");
+mediation_server_ip = ini_read_string("Settings", "mediation_server", "127.0.0.1");
+mediation_server_port = ini_read_real("Settings", "mediation_port", "6510");
 ini_close();
+show_debug_message("NAT settings: enabled=" + nat_enabled_str + " server=" + mediation_server_ip + ":" + string(mediation_server_port));
+
+// Initialize NAT constants
+nat_constants();
 
 if(!file_exists(working_directory + "\blacklist.txt")){
     blacklist = file_text_open_write(working_directory + "\blacklist.txt");
@@ -61,7 +70,53 @@ if(maxClients &gt; 16){
     maxClients = 16;
 }
 
-server = network_create_server(type, port, maxClients);
+// UDP Proxy Setup - Use configured port for UDP, random port for internal TCP
+udp_socket = network_create_socket_ext(network_socket_udp, port);
+show_debug_message("Server: Created UDP socket " + string(udp_socket) + " on port " + string(port));
+
+// Create internal TCP server on random available port
+tcp_internal_port = irandom_range(50000, 60000);
+server = network_create_server(type, tcp_internal_port, maxClients);
+
+show_debug_message("Server: Created TCP server socket " + string(server) + " on port " + string(tcp_internal_port));
+
+// UDP proxy data structures
+udp_clients = ds_map_create();  // "ip:port" -&gt; client state map
+tcp_to_udp = ds_map_create();   // TCP socket -&gt; "ip:port"
+udp_forward_buffer = buffer_create(65536, buffer_grow, 1);
+UDP_CLIENT_TIMEOUT = 30000;
+tcp_server_ip = "127.0.0.1";
+
+// UDP fragmentation settings
+UDP_MAX_FRAGMENT_SIZE = 1200;  // Conservative size for remote networks (avoids IP fragmentation)
+next_fragment_id = 0;  // Global fragment ID counter
+
+// Reliable UDP with ACK/retransmission
+next_sequence_number = 0;  // Global sequence number for reliable packets
+RETRANSMIT_TIMEOUT = 200;  // Milliseconds before retransmitting
+MAX_RETRANSMITS = 5;  // Maximum retransmission attempts
+
+// TCP client activity tracking for direct connections
+tcp_client_activity = ds_map_create();  // TCP socket -&gt; last_activity_time
+TCP_CLIENT_TIMEOUT = 10000;  // 10 seconds for game clients
+
+show_debug_message("Server: UDP proxy ready - clients connect to port " + string(port));
+show_debug_message("Server: Internal proxy will forward to " + tcp_server_ip + ":" + string(tcp_internal_port));
+
+// Initialize NAT traversal for server
+if (use_nat_traversal) {
+    nat_init_server();
+    nat_connect_mediation_server();
+    nat_keepalive_timer = 0;
+    NAT_KEEPALIVE_INTERVAL = 300;  // Send keepalive every 300 steps (~5 seconds at 60fps)
+} else {
+    // Initialize to safe defaults so cleanup doesn't error
+    nat_client_tunnels = -1;
+    mediation_socket = -1;
+    mediation_connected = false;
+    nat_state = 0;
+    nat_type = 0;
+}
 
 var _port = 64199;
 webpanel = network_create_server_raw(type, _port, 2);
@@ -168,6 +223,45 @@ network_destroy(webpanel);
 if(buffer_exists(buffer)){
     buffer_delete(buffer);
 }
+
+// Clean up UDP proxy resources
+var key = ds_map_find_first(udp_clients);
+while (!is_undefined(key)) {
+    var client_state = ds_map_find_value(udp_clients, key);
+    var tcp_socket = ds_map_find_value(client_state, "tcp_socket");
+    if (tcp_socket != noone) {
+        network_destroy(tcp_socket);
+    }
+    var recv_buffer = ds_map_find_value(client_state, "recv_buffer");
+    if (buffer_exists(recv_buffer)) {
+        buffer_delete(recv_buffer);
+    }
+    
+    // Clean up pending packets if any
+    if (ds_map_exists(client_state, "pending_packets")) {
+        var pending_list = ds_map_find_value(client_state, "pending_packets");
+        var packet_count = ds_list_size(pending_list) / 2;
+        for (var i = 0; i &lt; packet_count; i++) {
+            var pending_buffer = pending_list[| i * 2];
+            buffer_delete(pending_buffer);
+        }
+        ds_list_destroy(pending_list);
+    }
+    
+    ds_map_destroy(client_state);
+    key = ds_map_find_next(udp_clients, key);
+}
+ds_map_destroy(udp_clients);
+ds_map_destroy(tcp_to_udp);
+network_destroy(udp_socket);
+buffer_delete(udp_forward_buffer);
+ds_map_destroy(tcp_client_activity);
+
+// Clean up NAT traversal
+if (use_nat_traversal) {
+    nat_cleanup_server();
+}
+
 ds_list_destroy(socketList);
 ds_list_destroy(playerList);
 ds_list_destroy(idList);
@@ -1261,7 +1355,180 @@ alarm[0] = 90;
         <arguments>
           <argument>
             <kind>1</kind>
-            <string>if(prevPlayerListSize != ds_list_size(playerList) &amp;&amp; ds_list_size(playerList) &gt; 0){
+            <string>// UDP Proxy: Check for client timeouts and handle retransmissions
+var current = current_time;
+var key = ds_map_find_first(udp_clients);
+while (!is_undefined(key)) {
+    var next_key = ds_map_find_next(udp_clients, key);
+    var client_state = ds_map_find_value(udp_clients, key);
+    var last_activity = ds_map_find_value(client_state, "last_activity");
+    
+    // Handle retransmissions for pending ACKs
+    if (ds_map_exists(client_state, "pending_acks")) {
+        var pending_acks = ds_map_find_value(client_state, "pending_acks");
+        var seq_num = ds_map_find_first(pending_acks);
+        
+        while (!is_undefined(seq_num)) {
+            var next_seq = ds_map_find_next(pending_acks, seq_num);
+            var ack_data = ds_map_find_value(pending_acks, seq_num);
+            var send_time = ds_map_find_value(ack_data, "send_time");
+            var retransmits = ds_map_find_value(ack_data, "retransmits");
+            
+            // Check if we need to retransmit
+            if (current - send_time &gt; RETRANSMIT_TIMEOUT) {
+                if (retransmits &lt; MAX_RETRANSMITS) {
+                    // Retransmit the packet
+                    var pkt_buffer = ds_map_find_value(ack_data, "buffer");
+                    var pkt_size = ds_map_find_value(ack_data, "size");
+                    var client_ip = ds_map_find_value(client_state, "ip");
+                    var client_port = ds_map_find_value(client_state, "port");
+                    
+                    network_send_udp(udp_socket, client_ip, client_port, pkt_buffer, pkt_size);
+                    
+                    // Update retransmit tracking
+                    ds_map_replace(ack_data, "send_time", current);
+                    ds_map_replace(ack_data, "retransmits", retransmits + 1);
+                } else {
+                    // Max retransmits reached, give up on this packet
+                    var pkt_buffer = ds_map_find_value(ack_data, "buffer");
+                    buffer_delete(pkt_buffer);
+                    ds_map_destroy(ack_data);
+                    ds_map_delete(pending_acks, seq_num);
+                }
+            }
+            
+            seq_num = next_seq;
+        }
+    }
+    
+    // Check for timeout (30 seconds)
+    if (current - last_activity &gt; UDP_CLIENT_TIMEOUT) {
+        show_debug_message("Server: UDP client timeout: " + key);
+
+        // Get the TCP proxy socket ID for this client
+        var tcp_socket = ds_map_find_value(client_state, "tcp_socket");
+
+        // Remove from playerList (uses TCP socket ID, not client_key)
+        var findPlayer = ds_list_find_index(playerList, tcp_socket);
+        if (findPlayer &gt;= 0) {
+            ds_list_delete(playerList, findPlayer);
+        }
+
+        // Find and remove from idList and team lists (idList uses TCP socket ID at [0,1])
+        for (var j = 0; j &lt; ds_list_size(idList); j++) {
+            var arrList = idList[| j];
+            if (arrList[0, 1] == tcp_socket) {
+                var client_id = arrList[0, 0];
+
+                // Remove from team lists
+                var findID = ds_list_find_index(samusList, client_id);
+                if (findID &gt;= 0) {
+                    ds_list_delete(samusList, findID);
+                }
+
+                findID = ds_list_find_index(saxList, client_id);
+                if (findID &gt;= 0) {
+                    ds_list_delete(saxList, findID);
+                }
+
+                ds_list_delete(idList, j);
+                break;
+            }
+        }
+
+        // Cleanup TCP proxy socket
+        if (tcp_socket != noone) {
+            network_destroy(tcp_socket);
+            ds_map_delete(tcp_to_udp, tcp_socket);
+        }
+
+        var recv_buffer = ds_map_find_value(client_state, "recv_buffer");
+        if (buffer_exists(recv_buffer)) {
+            buffer_delete(recv_buffer);
+        }
+
+        // Clean up pending packets if any
+        if (ds_map_exists(client_state, "pending_packets")) {
+            var pending_list = ds_map_find_value(client_state, "pending_packets");
+            var packet_count = ds_list_size(pending_list) / 2;
+            for (var i = 0; i &lt; packet_count; i++) {
+                var pending_buffer = pending_list[| i * 2];
+                buffer_delete(pending_buffer);
+            }
+            ds_list_destroy(pending_list);
+        }
+
+        // Clean up pending ACKs
+        if (ds_map_exists(client_state, "pending_acks")) {
+            var pending_acks = ds_map_find_value(client_state, "pending_acks");
+            var seq_num = ds_map_find_first(pending_acks);
+            while (!is_undefined(seq_num)) {
+                var ack_data = ds_map_find_value(pending_acks, seq_num);
+                var pkt_buffer = ds_map_find_value(ack_data, "buffer");
+                buffer_delete(pkt_buffer);
+                ds_map_destroy(ack_data);
+                seq_num = ds_map_find_next(pending_acks, seq_num);
+            }
+            ds_map_destroy(pending_acks);
+        }
+
+        ds_map_destroy(client_state);
+        ds_map_delete(udp_clients, key);
+    }
+    
+    key = next_key;
+}
+
+// Check for TCP client timeouts (game clients that haven't sent data)
+for (var i = ds_list_size(playerList) - 1; i &gt;= 0; i--) {
+    var tcp_socket = playerList[| i];
+    
+    // Check if we have activity tracking for this socket
+    if (ds_map_exists(tcp_client_activity, tcp_socket)) {
+        var last_activity = ds_map_find_value(tcp_client_activity, tcp_socket);
+        
+        // Check for timeout (10 seconds)
+        if (current - last_activity &gt; TCP_CLIENT_TIMEOUT) {
+            show_debug_message("Server: TCP client timeout - socket " + string(tcp_socket) + " hasn't sent data in " + string(TCP_CLIENT_TIMEOUT/1000) + " seconds");
+            
+            // Find and remove from idList
+            for (var j = 0; j &lt; ds_list_size(idList); j++) {
+                var arrList = idList[| j];
+                if (arrList[0, 1] == tcp_socket) {
+                    var client_id = arrList[0, 0];
+                    
+                    // Remove from team lists
+                    var findID = ds_list_find_index(samusList, client_id);
+                    if (findID &gt;= 0) {
+                        ds_list_delete(samusList, findID);
+                    }
+                    
+                    findID = ds_list_find_index(saxList, client_id);
+                    if (findID &gt;= 0) {
+                        ds_list_delete(saxList, findID);
+                    }
+                    
+                    ds_list_delete(idList, j);
+                    break;
+                }
+            }
+            
+            // Close the socket
+            network_destroy(tcp_socket);
+            
+            // Remove from tracking maps
+            ds_map_delete(tcp_client_activity, tcp_socket);
+            ds_list_delete(playerList, i);
+            
+            // Check if server should reset
+            if (ds_list_size(playerList) == 0) {
+                with(oReset) alarm[10] = 1800;
+            }
+        }
+    }
+}
+
+if(prevPlayerListSize != ds_list_size(playerList) &amp;&amp; ds_list_size(playerList) &gt; 0){
     prevPlayerListSize = ds_list_size(playerList);
     var sockets = ds_list_size(playerList);
     buffer_delete(buffer);
@@ -1357,6 +1624,22 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(resetList) &gt; 0){
         ds_list_clear(resetList);
     }
 }
+
+// Handle NAT traversal hole punching for all client tunnels
+if (use_nat_traversal) {
+    nat_step_server_hole_punching();
+
+    // Send keepalive to mediation server to prevent timeout
+    nat_keepalive_timer++;
+    if (nat_keepalive_timer &gt;= NAT_KEEPALIVE_INTERVAL) {
+        nat_keepalive_timer = 0;
+        if (mediation_connected &amp;&amp; mediation_socket != -1) {
+            var params = ds_map_create();
+            nat_send_tcp_message(mediation_socket, MSG_KEEP_ALIVE, params);
+            ds_map_destroy(params);
+        }
+    }
+}
 </string>
           </argument>
         </arguments>
@@ -1380,8 +1663,433 @@ if(ds_list_size(playerList) &gt; 0 &amp;&amp; ds_list_size(resetList) &gt; 0){
           <argument>
             <kind>1</kind>
             <string>var type_event = ds_map_find_value(async_load, "type");
-
+var socket = ds_map_find_value(async_load, "id");
 var ip = ds_map_find_value(async_load, "ip");
+
+// ===== NAT TRAVERSAL MESSAGE HANDLING =====
+if (use_nat_traversal) {
+    // Handle mediation server TCP connection established
+    if (type_event == network_type_connect) {
+        if (socket == mediation_socket) {
+            show_debug_message("NAT Server: Main connection to mediation server established");
+        } else {
+            // Check if it's a tunnel socket
+            var tunnel = nat_find_tunnel_by_socket(socket);
+            if (tunnel != noone) {
+                nat_handle_tunnel_connected(socket);
+            }
+        }
+    }
+
+    // Handle TCP data from mediation server (main or tunnel)
+    if (type_event == network_type_data) {
+        var is_nat_socket = (socket == mediation_socket);
+        if (!is_nat_socket) {
+            var tunnel = nat_find_tunnel_by_socket(socket);
+            is_nat_socket = (tunnel != noone);
+        }
+
+        if (is_nat_socket) {
+            var _buffer = ds_map_find_value(async_load, "buffer");
+            buffer_seek(_buffer, buffer_seek_start, 0);
+            var data = buffer_read(_buffer, buffer_text);
+
+            // Get the appropriate TCP buffer
+            var tcp_buf_ref = "nat_tcp_buffer";
+            var tunnel = nat_find_tunnel_by_socket(socket);
+            if (tunnel != noone) {
+                tcp_buf_ref = ds_map_find_value(tunnel, "tcp_buffer");
+                tcp_buf_ref += data;
+                ds_map_replace(tunnel, "tcp_buffer", tcp_buf_ref);
+            } else {
+                nat_tcp_buffer += data;
+                tcp_buf_ref = nat_tcp_buffer;
+            }
+
+            // Try to parse complete JSON messages
+            var brace_count = 0;
+            var start_index = 0;
+            var i = 1;
+            while (i &lt;= string_length(tcp_buf_ref)) {
+                var ch = string_char_at(tcp_buf_ref, i);
+                if (ch == "{") {
+                    if (brace_count == 0) start_index = i;
+                    brace_count++;
+                } else if (ch == "}") {
+                    brace_count--;
+                    if (brace_count == 0 &amp;&amp; start_index &gt; 0) {
+                        var json_str = string_copy(tcp_buf_ref, start_index, i - start_index + 1);
+                        var msg = json_parse_nat_message(json_str);
+                        if (msg != noone) {
+                            nat_handle_server_tcp_message(msg, socket);
+                            ds_map_destroy(msg);
+                        }
+                        tcp_buf_ref = string_delete(tcp_buf_ref, 1, i);
+                        i = 0;
+                    }
+                }
+                i++;
+            }
+
+            // Update the buffer
+            if (tunnel != noone) {
+                ds_map_replace(tunnel, "tcp_buffer", tcp_buf_ref);
+            } else {
+                nat_tcp_buffer = tcp_buf_ref;
+            }
+            exit;
+        }
+    }
+
+    // Handle UDP hole punch packets (on main socket or random sockets)
+    var is_nat_socket = (socket == udp_socket);
+    if (!is_nat_socket &amp;&amp; use_nat_traversal &amp;&amp; ds_exists(nat_random_sockets, ds_type_list)) {
+        is_nat_socket = (ds_list_find_index(nat_random_sockets, socket) &gt;= 0);
+    }
+
+    if (type_event == network_type_data &amp;&amp; is_nat_socket) {
+        var recv_buffer = ds_map_find_value(async_load, "buffer");
+        var recv_port = ds_map_find_value(async_load, "port");
+        var receiving_socket = ds_map_find_value(async_load, "id");
+        if (nat_handle_server_udp_message(recv_buffer, ip, recv_port, receiving_socket)) {
+            exit;  // Was a NAT message, don't process as game data
+        }
+        buffer_seek(recv_buffer, buffer_seek_start, 0);  // Reset for normal processing
+    }
+}
+
+// ===== UDP PROXY LOGIC =====
+// Handle UDP packets from clients and proxy to TCP
+if (type_event == network_type_data &amp;&amp; socket == udp_socket) {
+    var recv_buffer = ds_map_find_value(async_load, "buffer");
+    var size = ds_map_find_value(async_load, "size");
+    var port = ds_map_find_value(async_load, "port");
+
+    var client_key = ip + ":" + string(port);
+
+    // Log incoming UDP packet
+    show_debug_message("Server: Received UDP packet from " + client_key + ", size=" + string(size));
+
+    // Get or create client state
+    var client_state;
+    if (!ds_map_exists(udp_clients, client_key)) {
+        show_debug_message("Server: New UDP client " + client_key + " - creating TCP proxy connection");
+        // Create new client state
+        client_state = ds_map_create();
+        ds_map_add(client_state, "ip", ip);
+        ds_map_add(client_state, "port", port);
+        ds_map_add(client_state, "last_activity", current_time);
+        ds_map_add(client_state, "recv_buffer", buffer_create(65536, buffer_grow, 1));
+        
+        // Reliable UDP tracking
+        ds_map_add(client_state, "pending_acks", ds_map_create());  // seq_num -&gt; {buffer, size, send_time, retransmits}
+        ds_map_add(client_state, "last_acked", -1);  // Last sequence number client acknowledged
+        
+        // Adaptive RTT tracking per client
+        ds_map_add(client_state, "smoothed_rtt", 100);  // Initial estimate: 100ms
+        ds_map_add(client_state, "rtt_variance", 50);   // Initial variance
+        
+        // Create TCP connection to our internal TCP server
+        var tcp_socket = network_create_socket(network_socket_tcp);
+        var connect_result = network_connect(tcp_socket, tcp_server_ip, tcp_internal_port);
+        
+        if (connect_result &gt;= 0) {
+            ds_map_add(client_state, "tcp_socket", tcp_socket);
+            ds_map_add(client_state, "connected", false);
+            ds_map_add(udp_clients, client_key, client_state);
+            ds_map_add(tcp_to_udp, tcp_socket, client_key);
+        } else {
+            network_destroy(tcp_socket);
+            ds_map_destroy(client_state);
+            exit;
+        }
+    } else {
+        client_state = ds_map_find_value(udp_clients, client_key);
+        ds_map_replace(client_state, "last_activity", current_time);
+    }
+    
+    // Check if this is an ACK packet (starts with 255 marker)
+    if (size &gt;= 5) {
+        if (buffer_peek(recv_buffer, 0, buffer_u8) == 255) {
+            // ACK packet format: [255][seq_num (u32)]
+            buffer_seek(recv_buffer, buffer_seek_start, 0);
+            buffer_read(recv_buffer, buffer_u8);  // Skip marker
+            var acked_seq = buffer_read(recv_buffer, buffer_u32);
+        
+        // Remove from pending ACKs and update RTT
+        var pending_acks = ds_map_find_value(client_state, "pending_acks");
+        if (ds_map_exists(pending_acks, acked_seq)) {
+            var ack_data = ds_map_find_value(pending_acks, acked_seq);
+            
+            // Measure RTT and update smoothed estimates (RFC 6298)
+            var send_time = ds_map_find_value(ack_data, "send_time");
+            var measured_rtt = current_time - send_time;
+            var smoothed_rtt = ds_map_find_value(client_state, "smoothed_rtt");
+            var rtt_variance = ds_map_find_value(client_state, "rtt_variance");
+            
+            // First measurement
+            if (smoothed_rtt == 100) {
+                smoothed_rtt = measured_rtt;
+                rtt_variance = measured_rtt / 2;
+            } else {
+                // Update using exponential weighted moving average
+                var alpha = 0.125;
+                var beta = 0.25;
+                rtt_variance = (1 - beta) * rtt_variance + beta * abs(smoothed_rtt - measured_rtt);
+                smoothed_rtt = (1 - alpha) * smoothed_rtt + alpha * measured_rtt;
+            }
+            
+            ds_map_replace(client_state, "smoothed_rtt", smoothed_rtt);
+            ds_map_replace(client_state, "rtt_variance", rtt_variance);
+            
+            var ack_buffer = ds_map_find_value(ack_data, "buffer");
+            buffer_delete(ack_buffer);
+            ds_map_destroy(ack_data);
+            ds_map_delete(pending_acks, acked_seq);
+        }
+        
+            ds_map_replace(client_state, "last_acked", acked_seq);
+            exit;  // Don't forward ACK packets to TCP
+        }
+    }
+    
+    // Check if this is a reliable packet (starts with 254 marker)
+    var is_reliable = false;
+    var actual_buffer = recv_buffer;
+    var actual_size = size;
+    
+    if (size &gt;= 5) {
+        if (buffer_peek(recv_buffer, 0, buffer_u8) == 254) {
+            is_reliable = true;
+            
+            // Extract sequence number
+            buffer_seek(recv_buffer, buffer_seek_start, 0);
+            buffer_read(recv_buffer, buffer_u8);  // Skip marker
+            var seq_num = buffer_read(recv_buffer, buffer_u32);
+            
+            // Send ACK back to client
+            var ack_buffer = buffer_create(5, buffer_fixed, 1);
+            buffer_seek(ack_buffer, buffer_seek_start, 0);
+            buffer_write(ack_buffer, buffer_u8, 255);  // ACK marker
+            buffer_write(ack_buffer, buffer_u32, seq_num);
+            network_send_udp(udp_socket, ip, port, ack_buffer, 5);
+            buffer_delete(ack_buffer);
+            
+            // Create new buffer with unwrapped packet (without 254 and seq_num)
+            actual_size = size - 5;
+            var unwrapped_buffer = buffer_create(actual_size, buffer_fixed, 1);
+            buffer_copy(recv_buffer, 5, actual_size, unwrapped_buffer, 0);
+            actual_buffer = unwrapped_buffer;
+        }
+    }
+    
+    // Forward UDP data to TCP socket
+    var tcp_socket = ds_map_find_value(client_state, "tcp_socket");
+    var connected = ds_map_find_value(client_state, "connected");
+    
+    if (tcp_socket != noone) if (connected) {
+        // Connection is ready, forward immediately
+        // Use the received buffer directly instead of copying to shared buffer
+        network_send_packet(tcp_socket, actual_buffer, actual_size);
+    } else if (tcp_socket != noone) {
+        // Connection is still pending, buffer this packet
+        // Store pending packet in client state
+        if (!ds_map_exists(client_state, "pending_packets")) {
+            ds_map_add(client_state, "pending_packets", ds_list_create());
+        }
+        var pending_list = ds_map_find_value(client_state, "pending_packets");
+        
+        // Copy packet to new buffer and store it (use actual_buffer in case it was unwrapped)
+        var pending_buffer = buffer_create(actual_size, buffer_fixed, 1);
+        buffer_copy(actual_buffer, 0, actual_size, pending_buffer, 0);
+        ds_list_add(pending_list, pending_buffer);
+        ds_list_add(pending_list, actual_size);
+    }
+    
+    // Clean up unwrapped buffer if we created one
+    if (is_reliable) {
+        buffer_delete(actual_buffer);
+    }
+    
+    exit; // Don't process as regular TCP event
+}
+
+// Handle TCP events from UDP-proxied clients
+if (ds_map_exists(tcp_to_udp, socket)) {
+    var client_key = ds_map_find_value(tcp_to_udp, socket);
+    
+    if (!ds_map_exists(udp_clients, client_key)) {
+        network_destroy(socket);
+        ds_map_delete(tcp_to_udp, socket);
+        exit;
+    }
+    
+    var client_state = ds_map_find_value(udp_clients, client_key);
+    ds_map_replace(client_state, "last_activity", current_time);
+    
+    // TCP connection established
+    if (type_event == network_type_connect) {
+        show_debug_message("Server: TCP proxy connection established for UDP client " + client_key);
+        ds_map_replace(client_state, "connected", true);
+
+        // Send any buffered packets that arrived before connection was ready
+        if (ds_map_exists(client_state, "pending_packets")) {
+            var pending_list = ds_map_find_value(client_state, "pending_packets");
+            var packet_count = ds_list_size(pending_list) / 2;
+            
+            for (var i = 0; i &lt; packet_count; i++) {
+                var pending_buffer = pending_list[| i * 2];
+                var pending_size = pending_list[| i * 2 + 1];
+                
+                // Send buffered packet directly without using shared buffer
+                network_send_packet(socket, pending_buffer, pending_size);
+                
+                buffer_delete(pending_buffer);
+            }
+            
+            ds_list_destroy(pending_list);
+            ds_map_delete(client_state, "pending_packets");
+        }
+        
+        exit;
+    }
+    
+    // TCP data received - forward to UDP client
+    else if (type_event == network_type_data) {
+        // If we receive data but haven't marked as connected, do it now
+        var was_connected = ds_map_find_value(client_state, "connected");
+        if (!was_connected) {
+            ds_map_replace(client_state, "connected", true);
+            
+            // Send any buffered packets
+            if (ds_map_exists(client_state, "pending_packets")) {
+                var pending_list = ds_map_find_value(client_state, "pending_packets");
+                var packet_count = ds_list_size(pending_list) / 2;
+                
+                for (var i = 0; i &lt; packet_count; i++) {
+                    var pending_buffer = pending_list[| i * 2];
+                    var pending_size = pending_list[| i * 2 + 1];
+                    
+                    // Send buffered packet directly without using shared buffer
+                    network_send_packet(socket, pending_buffer, pending_size);
+                    
+                    buffer_delete(pending_buffer);
+                }
+                
+                ds_list_destroy(pending_list);
+                ds_map_delete(client_state, "pending_packets");
+            }
+        }
+        
+        var recv_buffer = ds_map_find_value(async_load, "buffer");
+        var size = ds_map_find_value(async_load, "size");
+        var client_ip = ds_map_find_value(client_state, "ip");
+        var client_port = ds_map_find_value(client_state, "port");
+        
+        // Check if this packet needs reliable delivery (based on message ID)
+        var needs_reliable = false;
+        if (size &gt;= 5) {
+            buffer_seek(recv_buffer, buffer_seek_start, 0);
+            buffer_read(recv_buffer, buffer_s32);  // Skip size prefix
+            var msgid = buffer_peek(recv_buffer, 4, buffer_u8);
+            
+            // Message IDs that need reliable delivery:
+            // 2=disconnect, 3=seed, 102=health/ammo sync, 110-118=item pickups, 150-155=event syncs
+            if (msgid == 2) needs_reliable = true;
+            if (msgid == 3) needs_reliable = true;
+            if (msgid == 102) needs_reliable = true;
+            if (msgid &gt;= 110) if (msgid &lt;= 118) needs_reliable = true;
+            if (msgid &gt;= 150) if (msgid &lt;= 155) needs_reliable = true;
+        }
+        
+        // Forward TCP data back to UDP client (with fragmentation if needed)
+        var max_payload = UDP_MAX_FRAGMENT_SIZE - 4;  // 4 bytes for fragment header
+
+        // Log what message we're forwarding
+        if (size &gt;= 5) {
+            buffer_seek(recv_buffer, buffer_seek_start, 0);
+            buffer_read(recv_buffer, buffer_s32);  // Skip size
+            var forwarding_msgid = buffer_peek(recv_buffer, 4, buffer_u8);
+            show_debug_message("Server: Forwarding message type " + string(forwarding_msgid) + " to UDP client " + client_key);
+            buffer_seek(recv_buffer, buffer_seek_start, 0);  // Reset
+        }
+
+        if (size &lt;= UDP_MAX_FRAGMENT_SIZE) {
+            // Small packet - check if it needs reliable delivery
+            if (needs_reliable) {
+                // Wrap with sequence number for ACK: [254][seq_num (u32)][original_packet]
+                var seq_num = next_sequence_number;
+                next_sequence_number = (next_sequence_number + 1) mod 4294967296;  // Wrap at u32 max
+                
+                var reliable_buffer = buffer_create(size + 5, buffer_fixed, 1);
+                buffer_write(reliable_buffer, buffer_u8, 254);  // Reliable packet marker
+                buffer_write(reliable_buffer, buffer_u32, seq_num);
+                buffer_copy(recv_buffer, 0, size, reliable_buffer, 5);
+                
+                network_send_udp(udp_socket, client_ip, client_port, reliable_buffer, size + 5);
+                
+                // Track for retransmission
+                var pending_acks = ds_map_find_value(client_state, "pending_acks");
+                var ack_data = ds_map_create();
+                ds_map_add(ack_data, "buffer", reliable_buffer);
+                ds_map_add(ack_data, "size", size + 5);
+                ds_map_add(ack_data, "send_time", current_time);
+                ds_map_add(ack_data, "retransmits", 0);
+                ds_map_add(pending_acks, seq_num, ack_data);
+            } else {
+                // Unreliable - send directly
+                network_send_udp(udp_socket, client_ip, client_port, recv_buffer, size);
+            }
+        } else {
+            // Large packet - fragment it (create temporary buffer for each fragment to avoid race conditions)
+            var total_fragments = ceil(size / max_payload);
+            var fragment_id = next_fragment_id;
+            next_fragment_id = (next_fragment_id + 1) mod 65536;  // Wrap at u16 max
+            
+            for (var frag_idx = 0; frag_idx &lt; total_fragments; frag_idx++) {
+                var offset = frag_idx * max_payload;
+                var fragment_size = min(max_payload, size - offset);
+                
+                // Create temporary buffer for this fragment to avoid conflicts with other clients
+                var frag_buffer = buffer_create(fragment_size + 4, buffer_fixed, 1);
+                buffer_seek(frag_buffer, buffer_seek_start, 0);
+                buffer_write(frag_buffer, buffer_u16, fragment_id);
+                buffer_write(frag_buffer, buffer_u8, frag_idx);
+                buffer_write(frag_buffer, buffer_u8, total_fragments);
+                buffer_copy(recv_buffer, offset, fragment_size, frag_buffer, 4);
+                
+                network_send_udp(udp_socket, client_ip, client_port, frag_buffer, fragment_size + 4);
+                buffer_delete(frag_buffer);  // Clean up immediately after send
+            }
+        }
+        exit;
+    }
+    
+    // TCP disconnect
+    else if (type_event == network_type_disconnect) {
+        var recv_buffer = ds_map_find_value(client_state, "recv_buffer");
+        if (buffer_exists(recv_buffer)) {
+            buffer_delete(recv_buffer);
+        }
+        
+        // Clean up pending packets if any
+        if (ds_map_exists(client_state, "pending_packets")) {
+            var pending_list = ds_map_find_value(client_state, "pending_packets");
+            var packet_count = ds_list_size(pending_list) / 2;
+            for (var i = 0; i &lt; packet_count; i++) {
+                var pending_buffer = pending_list[| i * 2];
+                buffer_delete(pending_buffer);
+            }
+            ds_list_destroy(pending_list);
+        }
+        
+        ds_map_destroy(client_state);
+        ds_map_delete(udp_clients, client_key);
+        ds_map_delete(tcp_to_udp, socket);
+        exit;
+    }
+}
+// ===== END UDP PROXY LOGIC =====
 
 var findIP = ds_list_find_index(banList, ip);
 
@@ -1471,6 +2179,7 @@ switch(type_event){
         buffer_write(buffer, buffer_s32, bufferSize);
         buffer_write(buffer, buffer_u8, 0);
         buffer_write(buffer, buffer_u8, ID);
+        show_debug_message("Server: Sending message type 0 (client ID " + string(ID) + ") to TCP socket " + string(socket));
         network_send_packet(socket, buffer, buffer_tell(buffer));
         arr[0, 0] = ID;
         arr[0, 1] = socket;
@@ -1725,6 +2434,12 @@ switch(type_event){
             }
             ds_list_delete(playerList, findsocket);
             
+            // Clean up activity tracking for TCP clients
+            if (ds_map_exists(tcp_client_activity, socket)) {
+                ds_map_delete(tcp_client_activity, socket);
+                show_debug_message("Server: TCP client disconnected - socket " + string(socket));
+            }
+            
             if(ds_list_size(playerList) == 0){
                 with(oReset) alarm[10] = 1800;
             }
@@ -1735,6 +2450,12 @@ switch(type_event){
     case network_type_data:
         var _buffer = ds_map_find_value(async_load, "buffer");
         var socket = ds_map_find_value(async_load, "id");
+        
+        // Update TCP client activity timestamp (for direct TCP connections, not proxy)
+        if (!ds_map_exists(tcp_to_udp, socket) &amp;&amp; ds_list_find_index(playerList, socket) &gt;= 0) {
+            ds_map_set(tcp_client_activity, socket, current_time);
+        }
+        
         var bufferSize = buffer_get_size(_buffer);
         buffer_seek(_buffer, buffer_seek_start, 0);
         var bufferSizePacket = buffer_read(_buffer, buffer_s32);
@@ -2416,6 +3137,11 @@ switch(type_event){
                 var findsocket = ds_list_find_index(playerList, socket);
                 if(findsocket &lt; 0){
                     ds_list_add(playerList, socket); 
+                    
+                    // Initialize activity tracking for this TCP client
+                    ds_map_set(tcp_client_activity, socket, current_time);
+                    show_debug_message("Server: TCP client connected - socket " + string(socket) + ", tracking activity");
+                    
                     if(ds_list_size(playerList) &gt; 0 &amp;&amp; oReset.alarm[10] &gt; 0){
                         oReset.alarm[10] = -1;
                     }
@@ -4052,7 +4778,6 @@ switch(type_event){
                 alarm[5] = 30;
                 break;
     }
-    break;
 }
 
 if(ds_map_exists(posMap, banSocket) &amp;&amp; !posMapModified){
